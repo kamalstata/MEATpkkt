@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Penilaian MEAT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Noto+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}img{max-width:100%}
+/* Layout: field-survey console — filter bar, KPI strip, map + trend side by side, then evidence panels and the full record ledger */
+:root{
+  --bg:#f3f5f2; --panel:#ffffff; --ink:#15231f; --ink2:#4a5a55; --muted:#7b8a85; --line:#dde3df; --grid:#e8ece9;
+  --accent:#1f6f6a; --accent-soft:#d9ebe8; --neg:#b9c4c0;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --warn-ink:#8a5a00; --crit-ink:#a32626; --good-ink:#0b6e0b;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-data:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111816; --panel:#18211e; --ink:#e6eeeb; --ink2:#b3c1bc; --muted:#83928d; --line:#2b3733; --grid:#222d29;
+  --accent:#4fb3aa; --accent-soft:#1d3532; --neg:#4a5853; --warn-ink:#fab219; --crit-ink:#ef7a7a; --good-ink:#5fd35f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111816; --panel:#18211e; --ink:#e6eeeb; --ink2:#b3c1bc; --muted:#83928d; --line:#2b3733; --grid:#222d29;
+  --accent:#4fb3aa; --accent-soft:#1d3532; --neg:#4a5853; --warn-ink:#fab219; --crit-ink:#ef7a7a; --good-ink:#5fd35f; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(24px,3.2vw,34px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:.01em}
+.eyebrow{font-family:var(--f-data);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.meta{font-size:12px;color:var(--ink2);text-align:right}
+h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0;letter-spacing:.01em}
+.sub{font-size:12px;color:var(--muted);margin:2px 0 0}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.filters label{display:grid;gap:2px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+select,input[type=search]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:5px 8px;min-width:0}
+input[type=search]{width:190px}
+button{font:inherit;cursor:pointer}
+.btn{font-size:12px;border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:4px;padding:6px 10px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{font-family:var(--f-data);font-size:12px;color:var(--ink2)}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{background:var(--panel);padding:12px 14px;display:grid;gap:2px;align-content:start}
+.kpi .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:15px;color:var(--ink2);font-weight:500}
+.kpi .d{font-size:12px;color:var(--ink2)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.phead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink2);align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.legend i.ring{background:transparent!important;border:2px solid var(--ink2)}
+.legend i.vy{background:var(--muted);box-shadow:0 0 0 3px var(--ink)}
+.legend i.vn{background:var(--muted);box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--line)}
+.legend i.sq{border-radius:2px}
+#map>svg,#trend>svg,#hbr>svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font-family:var(--f-data);font-size:10px}
+.axis line,.gridl{stroke:var(--grid);stroke-width:1}
+.pt{cursor:pointer}
+.pt:hover{stroke-width:3}
+.bar{cursor:default}
+.tip{position:fixed;pointer-events:none;z-index:50;background:var(--ink);color:var(--bg);font-size:12px;padding:7px 9px;border-radius:4px;max-width:280px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.tip b{font-weight:600}
+.alerts{display:grid;gap:8px;max-height:520px;overflow-y:auto;padding-right:4px}
+.alert{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:9px 10px;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:4px;font-size:13px}
+.alert.crit{border-left-color:var(--crit)}
+.alert .tag{font-family:var(--f-data);font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;color:var(--warn-ink);grid-row:span 2;padding-top:2px}
+.alert.crit .tag{color:var(--crit-ink)}
+.alert strong{font-weight:600}
+.alert p{margin:0;color:var(--ink2);font-size:12px}
+.hbar{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:8px;align-items:center;font-size:12px}
+.hbar .t{height:12px;display:flex;gap:2px}
+.hbar .t span{display:block;height:100%;border-radius:0 3px 3px 0}
+.hbar .n{font-family:var(--f-data);color:var(--ink2);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.hbars{display:grid;gap:6px}
+.upload{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+.up-text{flex:1 1 380px;min-width:0;display:grid;gap:4px}
+.up-text .sub{max-width:80ch;font-size:12.5px;color:var(--ink2)}
+.up-status{margin:0;font-size:12.5px;font-family:var(--f-data);color:var(--accent)}
+.up-status.err{color:var(--crit-ink);font-family:var(--f-body)}
+.drop{display:flex;gap:12px;align-items:center;border:2px dashed color-mix(in srgb,var(--accent) 55%,var(--line));border-radius:6px;padding:14px 20px;cursor:pointer;background:var(--bg);font-size:13px;color:var(--ink);min-width:min(100%,240px)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.drop-ic{font-size:26px;line-height:1;color:var(--accent)}
+.gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px 28px}
+.gloss h3{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.gloss dl{margin:0;display:grid;gap:7px}
+.gloss dt{font-family:var(--f-data);font-size:12px;font-weight:500;color:var(--ink)}
+.gloss dd{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.45}
+.gloss dd b{color:var(--ink);font-weight:600}
+[data-gl]{text-decoration:underline dotted;text-underline-offset:3px;cursor:help}
+a.glink{color:var(--accent);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;border-radius:999px;padding:1px 8px;white-space:nowrap;border:1px solid}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-Rendah{color:var(--good-ink);border-color:color-mix(in srgb,var(--good) 45%,transparent)}
+.p-Sederhana{color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn) 60%,transparent)}
+.p-Tinggi{color:var(--crit-ink);border-color:color-mix(in srgb,var(--crit) 55%,transparent)}
+.vec{font-style:italic}
+.vec.none{font-style:normal;color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:1080px;font-size:12.5px}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--panel);position:sticky;top:0;cursor:pointer;white-space:nowrap}
+th[aria-sort]::after{content:" ▾";color:var(--accent)}
+th[aria-sort="ascending"]::after{content:" ▴"}
+td.num{font-family:var(--f-data);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+td.mono{font-family:var(--f-data);font-size:11.5px;white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--accent-soft)}
+tr.open td{background:var(--accent-soft)}
+a.lnk{color:var(--accent);text-decoration:none;font-size:12px;white-space:nowrap;border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+a.lnk:hover{border-bottom-color:var(--accent)}
+.links{display:flex;gap:10px;flex-wrap:wrap}
+.detail td{background:var(--bg);padding:14px}
+.dgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 18px}
+.dgrid div{min-width:0}
+.dgrid .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dgrid .v{font-size:12.5px;overflow-wrap:anywhere}
+.dgrid .wide{grid-column:1/-1}
+.ulasan{font-size:13px;line-height:1.55;max-width:90ch;color:var(--ink)}
+.casebox{border:1px dashed var(--line);border-radius:4px;padding:8px 10px}
+.note{font-size:12px;color:var(--muted)}
+ul.dq{margin:0;padding-left:18px;font-size:13px;color:var(--ink2);display:grid;gap:4px}
+.empty{font-size:13px;color:var(--muted);padding:20px 0;text-align:center}
+/* Leaflet 1.9.4 core styles (inlined) */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;-webkit-tap-highlight-color:transparent;background:var(--bg);font-family:var(--f-body);font-size:12px;outline-offset:1px}
+.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{user-select:none;-webkit-user-drag:none}
+.leaflet-tile::selection{background:transparent}
+.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
+.leaflet-container .leaflet-tile-pane img,.leaflet-container img.leaflet-tile{max-width:none!important;max-height:none!important;width:auto;padding:0}
+.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}
+.leaflet-container.leaflet-touch-zoom{touch-action:pan-x pan-y}
+.leaflet-container.leaflet-touch-drag{touch-action:none}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{touch-action:none}
+.leaflet-tile{filter:inherit;visibility:hidden}
+.leaflet-tile-loaded{visibility:inherit}
+.leaflet-zoom-box{width:0;height:0;box-sizing:border-box;z-index:800}
+.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-shadow-pane{z-index:500}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-right .leaflet-control{float:right}
+.leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px}
+.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
+.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}
+.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
+.leaflet-interactive{cursor:pointer}
+.leaflet-grab{cursor:grab}
+.leaflet-dragging .leaflet-grab,.leaflet-dragging .leaflet-grab .leaflet-interactive{cursor:move}
+.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
+.leaflet-marker-icon.leaflet-interactive,.leaflet-image-layer.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive{pointer-events:auto}
+.leaflet-bar{box-shadow:0 1px 4px rgba(0,0,0,.35);border-radius:4px}
+.leaflet-bar a{background:var(--panel);color:var(--ink);border-bottom:1px solid var(--line);width:28px;height:28px;line-height:28px;display:block;text-align:center;text-decoration:none;font:600 17px/28px var(--f-data)}
+.leaflet-bar a:first-child{border-radius:4px 4px 0 0}.leaflet-bar a:last-child{border-radius:0 0 4px 4px;border-bottom:none}
+.leaflet-bar a.leaflet-disabled{color:var(--muted);cursor:default}
+.leaflet-control-layers{box-shadow:0 1px 4px rgba(0,0,0,.35);background:var(--panel);color:var(--ink);border-radius:5px;padding:6px 10px 6px 8px}
+.leaflet-control-layers-toggle{display:none}
+.leaflet-control-layers label{display:block;font-size:12.5px;line-height:1.7;cursor:pointer}
+.leaflet-control-layers-separator{height:0;border-top:1px solid var(--line);margin:5px -10px 5px -6px}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--panel) 85%,transparent);margin:0!important;padding:0 5px;color:var(--ink2);font-size:10.5px;line-height:1.5}
+.leaflet-control-attribution a{color:var(--accent)}
+.leaflet-control-scale-line{border:2px solid var(--ink2);border-top:none;line-height:1.1;padding:2px 5px 1px;font-size:11px;white-space:nowrap;box-sizing:border-box;background:color-mix(in srgb,var(--panel) 80%,transparent);color:var(--ink)}
+.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}
+.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:6px;background:var(--panel);color:var(--ink);box-shadow:0 3px 14px rgba(0,0,0,.3)}
+.leaflet-popup-content{margin:11px 26px 11px 13px;line-height:1.45;font-size:12.5px;min-height:1px}
+.leaflet-popup-content p{margin:4px 0}
+.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-top:-1px;margin-left:-20px;overflow:hidden;pointer-events:none}
+.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;pointer-events:auto;transform:rotate(45deg);background:var(--panel);box-shadow:0 3px 14px rgba(0,0,0,.3)}
+.leaflet-container a.leaflet-popup-close-button{position:absolute;top:0;right:0;border:none;text-align:center;width:24px;height:24px;font:16px/24px var(--f-body);color:var(--muted);text-decoration:none;background:transparent}
+.leaflet-tooltip{position:absolute;padding:7px 9px;background:var(--ink);color:var(--bg);border-radius:4px;white-space:normal;width:max-content;max-width:260px;line-height:1.45;user-select:none;pointer-events:none;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.leaflet-tooltip-top:before,.leaflet-tooltip-bottom:before,.leaflet-tooltip-left:before,.leaflet-tooltip-right:before{display:none}
+#lmap{height:540px;max-width:100%;border-radius:4px;border:1px solid var(--line)}
+.leaflet-attribution-flag{display:inline!important;vertical-align:baseline!important;width:1em!important;height:.6669em!important}
+.leaflet-pane>svg{display:inline;overflow:visible}
+@media (max-width:480px){#lmap{height:420px}}
+.mapnote{font-size:12.5px;color:var(--ink);background:var(--accent-soft);border-radius:4px;padding:8px 10px;line-height:1.45}
+.pop-t{font-family:var(--f-display);font-weight:600;font-size:15px}
+.pop-k{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.landing{max-width:860px;padding-block:clamp(28px,7vh,72px) 48px;gap:18px}
+.land-h{font-size:clamp(30px,6vw,48px)}
+.h-sub{display:block;font-family:var(--f-body);font-weight:500;font-size:.42em;letter-spacing:.01em;color:var(--ink2);margin-top:6px}
+.land-lead{margin:0;font-size:15px;line-height:1.6;color:var(--ink2);max-width:66ch}
+.drop{display:flex;gap:12px;align-items:center;border:2px dashed color-mix(in srgb,var(--accent) 55%,var(--line));border-radius:8px;padding:14px 20px;cursor:pointer;background:var(--panel);font-size:13px;color:var(--ink)}
+.drop.big{padding:clamp(22px,5vw,40px) clamp(18px,4vw,32px);gap:18px}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.drop-ic{font-size:34px;line-height:1;color:var(--accent)}
+.drop-t{display:grid;gap:2px;font-size:16px}
+.up-status{margin:0;font-size:13px;color:var(--accent);min-height:1.2em}
+.up-status.err{color:var(--crit-ink)}
+.land-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.btn-demo{border-color:var(--accent);color:var(--accent);font-weight:500;padding:9px 14px;font-size:13px}
+.btn-demo:hover{background:var(--accent-soft)}
+.land-notes{margin:6px 0 0;padding:14px 0 0 18px;border-top:1px solid var(--line);display:grid;gap:8px;font-size:13px;color:var(--ink2);max-width:72ch}
+.land-notes .mono,.mono{font-family:var(--f-data);font-size:.92em}
+.demo-banner{background:color-mix(in srgb,var(--warn) 22%,var(--panel));border:1px solid color-mix(in srgb,var(--warn) 60%,transparent);color:var(--ink);border-radius:6px;padding:8px 12px;font-size:13px;font-weight:500}
+.meta{display:grid;gap:8px;justify-items:end}
+.jump{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;gap:8px;align-items:center;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);padding:8px 0;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.jump select{flex:0 1 220px}
+.land-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:0 0 auto;background:var(--panel)}
+.lang button{border:0;background:transparent;color:var(--ink2);font:500 12px/1 var(--f-data);padding:8px 11px;min-height:32px;cursor:pointer;letter-spacing:.04em}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.jump .lang{margin-left:auto}
+#fToggle{display:none}
+section[id],div[id="kpis"],#kpis{scroll-margin-top:64px}
+.inl{display:flex;gap:6px;align-items:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.inl select{text-transform:none;letter-spacing:0}
+.cards{display:none;gap:8px}
+.rcard{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:11px 12px;display:grid;gap:4px;cursor:pointer;border-left:4px solid var(--good)}
+.rcard.r-Sederhana{border-left-color:var(--warn)}.rcard.r-Tinggi{border-left-color:var(--crit)}
+.rcard.open{background:var(--accent-soft)}
+.rc-top{display:flex;justify-content:space-between;gap:8px;align-items:center;font-family:var(--f-data);font-size:11.5px;color:var(--muted)}
+.rc-lok{font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.2}
+.rc-sub{font-size:12.5px;color:var(--ink2)}
+.rc-nums{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px}
+.rc-nums b{font-family:var(--f-data);font-weight:500}
+.rcard .dgrid{margin-top:8px;padding-top:10px;border-top:1px solid var(--line);cursor:auto}
+select,input[type=search],.btn{min-height:36px}
+@media (max-width:700px){
+  .tablewrap{display:none}.cards{display:grid}
+  #fToggle{display:inline-flex;align-items:center}
+  .filters{display:none;grid-template-columns:1fr 1fr}
+  .filters.open{display:grid}
+  .filters label{min-width:0}
+  .filters label:has(#fQ){grid-column:1/-1}
+  #fQ{width:100%}
+  .jump select{flex:1 1 auto;min-width:0}
+  .count{font-size:11px;white-space:nowrap}
+  header{align-items:flex-start}
+  .meta{justify-items:start;text-align:left}
+  .kpi .v{font-size:24px}
+  .panel{padding:12px}
+  .hbar{grid-template-columns:minmax(80px,40%) 1fr auto}
+  .dgrid{grid-template-columns:1fr 1fr}
+  .phead .inl{width:100%}
+  .phead .inl select{flex:1}
+}
+@media (max-width:420px){.dgrid{grid-template-columns:1fr}.filters{grid-template-columns:1fr}}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){.grid2,.grid3{grid-template-columns:1fr}.dgrid{grid-template-columns:1fr 1fr}.meta{text-align:left}}
+@media (max-width:480px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}input[type=search]{width:100%}.filters label{flex:1 1 40%}.count{margin-left:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap landing" id="landing">
+  <div class="land-top"><div class="eyebrow" data-en="Entomology &amp; Vector Control Unit · PKK Tuaran">Unit Entomologi &amp; Kawalan Vektor · PKK Tuaran</div>
+    <div class="lang" role="group" aria-label="Bahasa / Language"><button type="button" data-lang="bm">BM</button><button type="button" data-lang="en">EN</button></div></div>
+  <h1 class="land-h" data-en="MEAT Assessment<span class=&quot;h-sub&quot;>Malaria Entomology Anopheles Tuaran</span>">Penilaian MEAT<span class="h-sub">Malaria Entomology Anopheles Tuaran</span></h1>
+  <p class="land-lead" data-en="Upload the Excel export of the <b>Anopheles Entomological Assessment Report</b> form to see the locality map, vector findings, HBR, V / R / Introduction risk scores, issues needing attention and the study register.">Muat naik fail Excel eksport borang <b>Laporan Penilaian Entomologi Anopheles</b> untuk melihat peta lokaliti, penemuan vektor, HBR, skor risiko V / R / Introduction, isu yang perlu perhatian dan daftar kajian.</p>
+  <label class="drop big" id="drop" for="fileIn">
+    <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" hidden>
+    <span class="drop-ic" aria-hidden="true">⇪</span>
+    <span class="drop-t"><b data-en="Choose Excel file (.xlsx)">Pilih fail Excel (.xlsx)</b><span class="note" data-en="or drag and drop the file here">atau seret dan lepas fail di sini</span></span>
+  </label>
+  <p class="up-status" id="upStatus" role="status"></p>
+  <div class="land-row">
+    <button class="btn btn-demo" id="demoBtn" type="button" data-en="Try with demo data">Cuba dengan data demo</button>
+    <span class="note" data-en="Demo data are fictional records to show how the dashboard works.">Data demo ialah rekod rekaan untuk melihat cara dashboard berfungsi.</span>
+  </div>
+  <ul class="land-notes">
+    <li data-en="<b>Privacy.</b> The file is read in your browser only and is not sent to any server. Case names are removed automatically."><b>Privasi.</b> Fail dibaca dalam pelayar anda sahaja dan tidak dihantar ke mana-mana pelayan. Nama kes dibuang secara automatik.</li>
+    <li data-en="<b>Nothing is stored.</b> Reloading the page returns to this screen."><b>Tiada data disimpan.</b> Muat semula halaman akan kembali ke skrin ini.</li>
+    <li><b data-en="Format.">Format.</b> <span data-en="Google Form export with columns such as">Fail eksport Google Form dengan lajur seperti</span> <span class="mono">No. Rujukan Kajian</span>, <span class="mono">Tarikh</span>, <span class="mono">Daerah</span>, <span class="mono">Lokaliti</span>, <span class="mono">Spesis Dewasa (vektor)</span>, <span class="mono">HBR / HLR Keseluruhan</span>, <span class="mono">Nilai Vulnerability</span>, <span class="mono">Nilai Receptivity</span>, <span class="mono">Nilai Malaria Introduction</span>.</li>
+  </ul>
+</div>
+
+<div class="wrap" id="dash" hidden>
+<div class="demo-banner" id="demoBanner" hidden data-en="DEMO DATA. All records below are fictional, not real data.">DATA DEMO. Semua rekod di bawah adalah rekaan dan bukan data sebenar.</div>
+<header>
+  <div>
+    <div class="eyebrow" data-en="Entomology &amp; Vector Control Unit · PKK Tuaran">Unit Entomologi &amp; Kawalan Vektor · PKK Tuaran</div>
+    <h1 data-en="MEAT Assessment<span class=&quot;h-sub&quot;>Malaria Entomology Anopheles Tuaran</span>">Penilaian MEAT<span class="h-sub">Malaria Entomology Anopheles Tuaran</span></h1>
+    <p class="sub" data-en="ERA Locality Receptivity, EI ZM Cluster, EI Outbreak and VCIA. All localities are <em>Cleared foci</em>.">ERA Lokaliti Receptivity, EI Kluster ZM, EI Wabak dan VCIA. Semua lokaliti berstatus <em>Cleared foci</em>.</p>
+  </div>
+  <div class="meta"><div id="meta"></div><button class="btn" id="changeBtn" type="button" data-en="⇪ Upload another file">⇪ Muat naik fail lain</button></div>
+</header>
+
+<nav class="jump" aria-label="Navigasi bahagian" data-en-aria="Section navigation">
+  <label for="jump" class="sr" data-en="Go to section">Pergi ke bahagian</label>
+  <select id="jump">
+    <option value="" data-en="Go to…">Pergi ke…</option><option value="kpis" data-en="Summary">Ringkasan</option><option value="s-peta" data-en="Locality map">Peta lokaliti</option><option value="s-trend" data-en="Trend &amp; HBR">Trend &amp; HBR</option>
+    <option value="s-mukim" data-en="By mukim">Mengikut mukim</option><option value="s-cad" data-en="Recommendations">Cadangan</option><option value="s-alert" data-en="Needs attention">Perlu perhatian</option><option value="s-daftar" data-en="Study register">Daftar kajian</option><option value="glosari" data-en="Glossary">Glosari singkatan</option><option value="s-dq" data-en="Data quality">Kualiti data</option>
+  </select>
+  <button class="btn" id="fToggle" type="button" aria-expanded="false" aria-controls="filters" data-en="Filters">Penapis</button>
+  <span class="count" id="count"></span>
+  <div class="lang" role="group" aria-label="Bahasa / Language"><button type="button" data-lang="bm">BM</button><button type="button" data-lang="en">EN</button></div>
+</nav>
+
+<div class="filters" id="filters" role="search">
+  <label for="fYear"><span data-en="Year">Tahun</span><select id="fYear"></select></label>
+  <label for="fDaerah"><span data-en="District">Daerah</span><select id="fDaerah"></select></label>
+  <label for="fMukim"><span data-en="Mukim">Mukim</span><select id="fMukim"></select></label>
+  <label for="fKlas"><span data-en="Investigation type">Klasifikasi siasatan</span><select id="fKlas"></select></label>
+  <label for="fVec"><span data-en="Adult vector">Vektor dewasa</span><select id="fVec"><option value="" data-en="All">Semua</option><option value="1" data-en="Found">Dijumpai</option><option value="0" data-en="None">Tiada</option></select></label>
+  <label for="fRisk"><span data-en="Malaria Introduction">Malaria Introduction</span><select id="fRisk"><option value="" data-en="All">Semua</option><option value="Rendah" data-en="Low">Rendah</option><option value="Sederhana" data-en="Moderate">Sederhana</option><option value="Tinggi" data-en="High">Tinggi</option></select></label>
+  <label for="fQ"><span data-en="Search locality / mukim">Cari lokaliti / mukim</span><input type="search" id="fQ" placeholder="cth. Nalapak" data-en-ph="e.g. Nalapak"></label>
+  <button class="btn" id="reset" type="button" data-en="Reset">Set semula</button>
+</div>
+
+<section class="kpis" id="kpis" aria-label="Ringkasan" data-en-aria="Summary"></section>
+
+<div class="grid2">
+  <section class="panel" id="s-peta">
+    <div class="phead"><div><h2 data-en="Study locality map">Peta lokaliti kajian</h2><p class="sub" data-en="Tap or click a point for readings and map links.">Sentuh atau klik titik untuk bacaan dan pautan peta.</p></div>
+      <label class="inl" for="fBase" id="baseWrap"><span data-en="Basemap">Peta asas</span> <select id="fBase"><option value="street" data-en="Street map">Peta Jalan</option><option value="hybrid" data-en="Satellite + labels">Satelit + label</option></select></label></div>
+    <div class="legend">
+      <span><i style="background:var(--good)"></i><span data-en="Low">Rendah</span></span><span><i style="background:var(--warn)"></i><span data-en="Moderate">Sederhana</span></span><span><i style="background:var(--crit)"></i><span data-en="High">Tinggi</span></span>
+      <span style="color:var(--muted)" data-en="Colour = Malaria Introduction level">Warna = tahap Malaria Introduction</span><span><i class="vy"></i><span data-en="Thick black outline = vector found">Garis hitam tebal = vektor dijumpai</span></span><span><i class="vn"></i><span data-en="White outline = no vector">Garis putih = tiada vektor</span></span><span id="kinLeg" data-en="▲ Mount Kinabalu (reference)">▲ Gunung Kinabalu (rujukan)</span>
+    </div>
+    <div id="mapnote" class="mapnote" hidden></div>
+    <div id="lmap" aria-label="Peta interaktif lokaliti kajian" data-en-aria="Interactive map of study localities"></div>
+    <div id="map" hidden></div>
+  </section>
+  <section class="panel" id="s-trend">
+    <div class="phead"><div><h2 data-en="Studies per quarter">Kajian setiap suku tahun</h2><p class="sub" data-en="Number of studies, split by adult vector finding">Bilangan kajian, dipecahkan mengikut penemuan vektor dewasa</p></div></div>
+    <div class="legend"><span><i class="sq" style="background:var(--accent)"></i><span data-en="Vector found">Vektor dijumpai</span></span><span><i class="sq" style="background:var(--neg)"></i><span data-en="No vector">Tiada vektor</span></span></div>
+    <div id="trend"></div>
+    <div class="phead"><div><h2 data-en="HBR at vector-positive localities">HBR di lokaliti positif vektor</h2><p class="sub" data-en="Overall HBR/HLR (bites/person/night), one point per study">HBR/HLR keseluruhan (gigitan/orang/malam), satu titik setiap kajian</p></div></div>
+    <div id="hbr"></div>
+  </section>
+</div>
+
+<div class="grid3">
+  <section class="panel" id="s-mukim">
+    <div class="phead"><div><h2 data-en="By mukim">Mengikut mukim</h2><p class="sub" data-en="Studies and number vector-positive">Kajian dan bilangan positif vektor</p></div></div>
+    <div class="hbars" id="mukim"></div>
+  </section>
+  <section class="panel" id="s-cad">
+    <div class="phead"><div><h2 data-en="Recommended actions">Cadangan penambahbaikan</h2><p class="sub" data-en="How often each was recommended in reports">Kekerapan disyorkan dalam laporan</p></div></div>
+    <div class="hbars" id="cad"></div>
+  </section>
+  <section class="panel" id="s-alert">
+    <div class="phead"><div><h2 data-en="Needs attention">Perlu perhatian</h2><p class="sub" data-en="Findings that need action or a data check">Penemuan yang memerlukan tindakan atau semakan data</p></div></div>
+    <div class="alerts" id="alerts"></div>
+  </section>
+</div>
+
+<section class="panel" id="s-daftar" style="padding:0;border:0;background:transparent">
+  <div class="phead"><div><h2 data-en="Study register">Daftar kajian</h2><p class="sub" data-en="Tap a record for species, full parameters, comments and case details.">Sentuh rekod untuk spesies, parameter penuh, ulasan dan maklumat kes.</p></div>
+    <label class="inl" for="sortSel"><span data-en="Sort">Susun</span> <select id="sortSel"><option value="date|-1" data-en="Newest first">Tarikh terbaru</option><option value="date|1" data-en="Oldest first">Tarikh terawal</option><option value="I|-1" data-en="Highest Introduction">Introduction tertinggi</option><option value="R|-1" data-en="Highest R">R tertinggi</option><option value="hbr|-1" data-en="Highest HBR">HBR tertinggi</option><option value="lok|1" data-en="Locality A–Z">Lokaliti A–Z</option><option value="lag|-1" data-en="Most delayed report">Paling lewat dilapor</option></select></label></div>
+  <div class="cards" id="cards"></div>
+  <div class="tablewrap"><table id="tbl"><thead><tr>
+    <th data-k="date" data-en="Date">Tarikh</th><th data-k="ref" data-en="Ref. no.">No. rujukan</th><th data-k="daerah" data-en="District">Daerah</th><th data-k="mukim">Mukim</th><th data-k="lok" data-en="Locality">Lokaliti</th><th data-k="klas" data-en="Type">Klasifikasi</th><th data-k="vecA" data-en="Adult vector">Vektor dewasa</th><th data-k="hbr">HBR</th><th data-k="pr">PR %</th><th data-k="v">V</th><th data-k="R">R</th><th data-k="I">Introduction</th><th data-k="lag" data-en="Delay (days)">Lewat (hari)</th><th data-en="Map">Peta</th>
+  </tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="panel" id="glosari">
+  <div class="phead"><div><h2 data-en="Glossary of abbreviations">Glosari singkatan</h2><p class="sub" data-en="Meaning of every abbreviation and term in this dashboard, with a short explanation">Maksud setiap singkatan dan istilah dalam dashboard ini, dengan penerangan ringkas</p></div></div>
+  <div class="gloss" id="gloss"></div>
+</section>
+
+<section class="panel" id="s-dq">
+  <h2 data-en="Data quality">Kualiti data</h2>
+  <ul class="dq" id="dq"></ul>
+  <p class="note" data-en="Case names are removed from this dashboard. Coordinates typed with a degree symbol or in one cell are corrected for the map. Officers' comments are shown in their original language.">Nama kes telah dibuang daripada dashboard ini. Koordinat yang ditaip dengan simbol darjah atau dalam satu sel telah dibetulkan untuk peta. Ulasan pegawai dipaparkan dalam bahasa asal.</p>
+</section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+let DATA = [];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (x, d=2) => x == null ? '–' : (+x).toFixed(d).replace(/\.?0+$/,'') || '0';
+const RISKC = {Rendah:'var(--good)', Sederhana:'var(--warn)', Tinggi:'var(--crit)'};
+let LANG = 'bm'; try { const s = localStorage.getItem('pkk-lang'); if (s === 'en' || s === 'bm') LANG = s; } catch(e) {}
+const tr = (bm, en) => LANG === 'en' ? en : bm;
+const VAL = {Rendah:'Low', Sederhana:'Moderate', Tinggi:'High', Tiada:'None', Ada:'Yes', 'Tempat Tinggal':'Residence', 'Tempat Kerja':'Workplace', 'Tidak Dapat Dipastikan':'Undetermined',
+  Lelaki:'Male', Perempuan:'Female', 'Pernah Kes Zoonotik Malaria':'Previous zoonotic malaria case', 'Status vektor':'Vector status', 'Potensi jangkitan':'Transmission potential',
+  'Tidak direkod':'Not recorded', 'Perbincangan Kumpulan Kecil':'Small group discussion', Ceramah:'Health talk', Pameran:'Exhibition', 'Pendidikan Kesihatan':'Health education',
+  'Tidak Perlu':'Not required', 'Zoonotik Malaria':'Zoonotic malaria', 'Tiada penemuan larva':'No larvae found', 'Tiada penemuan nyamuk dewasa':'No adult mosquitoes found'};
+const V = s => LANG === 'en' ? (VAL[s] ?? s) : s;
+const VL = s => s == null ? s : String(s).split(',').map(x => V(x.trim())).join(', ');
+const QL = q => LANG === 'en' ? q.replace(' S', ' Q') : q;
+const isVec = r => r.vecA && r.vecA !== 'Tiada';
+const osm = r => `https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lon}#map=16/${r.lat}/${r.lon}`;
+const sat = r => `https://www.google.com/maps/@?api=1&map_action=map&center=${r.lat},${r.lon}&zoom=17&basemap=satellite`;
+const links = r => r.lat == null ? `<span class="note">${tr('Tiada GPS','No GPS')}</span>` : `<span class="links"><a class="lnk" href="${osm(r)}" target="_blank" rel="noopener">${tr('Peta jalan','Street map')} ↗</a><a class="lnk" href="${sat(r)}" target="_blank" rel="noopener">${tr('Satelit','Satellite')} ↗</a></span>`;
+const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+const pill = s => `<span class="pill p-${esc(s)}">${esc(V(s))}</span>`;
+
+// ---------- filters
+const uniq = k => [...new Set(DATA.map(k))].sort();
+function fillSel(id, vals){ $(id).innerHTML = `<option value="">${tr('Semua','All')}</option>` + vals.map(v=>`<option value="${esc(v)}">${esc(V(v))}</option>`).join(''); }
+function fillMukim(){ const d=$('#fDaerah').value, cur=$('#fMukim').value; const ms=[...new Set(DATA.filter(r=>!d||r.daerah===d).map(r=>r.mukim))].sort();
+  fillSel('#fMukim', ms); $('#fMukim').value = ms.includes(cur) ? cur : ''; }
+function fillFilters(){ fillSel('#fYear', uniq(r=>r.date.slice(0,4))); fillSel('#fDaerah', uniq(r=>r.daerah)); fillSel('#fKlas', uniq(r=>r.klas)); fillMukim(); }
+let SRC = '', DQX = {gps:0, nil:false}, IS_DEMO = false;
+function yearSpan(){ const ys = DATA.map(r=>+r.date.slice(0,4)); const y1 = Math.max(...ys); return [Math.max(Math.min(...ys), y1-2), y1]; }
+const F = ['#fYear','#fDaerah','#fMukim','#fKlas','#fVec','#fRisk','#fQ'];
+F.forEach(id => $(id).addEventListener('input', () => { if (id==='#fDaerah') fillMukim(); render(); }));
+$('#reset').onclick = () => { F.forEach(id => $(id).value=''); fillMukim(); render(); };
+$('#fToggle').onclick = () => { const o = $('#filters').classList.toggle('open'); $('#fToggle').setAttribute('aria-expanded', o); };
+$('#jump').onchange = e => { const id = e.target.value; if (!id) return; const el = document.getElementById(id); if (el) el.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'start'}); e.target.value=''; };
+$('#sortSel').onchange = e => { const [k,d] = e.target.value.split('|'); sortK = k; sortDir = +d; render(); };
+const isMobile = () => matchMedia('(max-width:700px)').matches;
+const chartW = (sel, max) => { const w = $(sel).clientWidth; return w ? Math.max(300, Math.min(max, Math.round(w))) : max; };
+function filtered(){
+  const y=$('#fYear').value, d=$('#fDaerah').value, mk=$('#fMukim').value, k=$('#fKlas').value, v=$('#fVec').value, rk=$('#fRisk').value, q=$('#fQ').value.trim().toLowerCase();
+  return DATA.filter(r => (!y||r.date.startsWith(y)) && (!d||r.daerah===d) && (!mk||r.mukim===mk) && (!k||r.klas===k) && (!v||(isVec(r)?'1':'0')===v) && (!rk||r.iS===rk)
+    && (!q || (r.lok+' '+r.mukim+' '+r.ref).toLowerCase().includes(q)));
+}
+
+// ---------- tooltip
+const tip = $('#tip');
+function showTip(e, html){ tip.innerHTML = html; tip.hidden = false; moveTip(e); }
+function moveTip(e){ const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; tip.style.left = x+'px'; tip.style.top = y+'px'; }
+function hideTip(){ tip.hidden = true; }
+function bindTips(root){ root.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mouseenter', e => showTip(e, el.dataset.tip)); el.addEventListener('mousemove', moveTip); el.addEventListener('mouseleave', hideTip); }); }
+
+// ---------- KPIs
+function topVec(rs){ const c={}; rs.filter(isVec).forEach(r=>String(r.vecA).split(',').forEach(s=>{s=s.trim(); if(s) c[s]=(c[s]||0)+1;})); const a=Object.entries(c).sort((x,y)=>y[1]-x[1]); return a.length? tr(`, terbanyak ${a[0][0]} (${a[0][1]})`, `, mostly ${a[0][0]} (${a[0][1]})`) : ''; }
+function kpis(rs){
+  const n = rs.length, nv = rs.filter(isVec).length;
+  const hv = rs.filter(isVec).map(r=>r.hbr).filter(x=>x!=null);
+  const mod = rs.filter(r=>r.iS!=='Rendah').length;
+  const lag = median(rs.map(r=>r.lag));
+  const tind = rs.filter(r=>r.tindakan).length;
+  const loks = new Set(rs.map(r=>(r.lok||'').toLowerCase().replace(/[\s.]/g,''))).size;
+  const pr = rs.filter(r=>r.pr>0).length;
+  $('#kpis').innerHTML = [
+    [tr('Kajian','Studies'), n, tr(`${loks} lokaliti unik`, `${loks} unique localities`), ''],
+    [tr('Positif vektor dewasa','Adult vector positive'), n? `${nv}<small> / ${n}</small>`:'–', n? `${Math.round(100*nv/n)}% ${tr('kajian','of studies')}${topVec(rs)}`:'', tr('Kajian yang menemui nyamuk vektor peringkat dewasa.','Studies that caught adult vector mosquitoes.')],
+    [tr('Median HBR (positif)','Median HBR (positive)'), hv.length? fmt(median(hv),3):'–', hv.length? tr(`maks ${fmt(Math.max(...hv),2)} gigitan/orang/malam`, `max ${fmt(Math.max(...hv),2)} bites/person/night`):tr('tiada lokaliti positif','no positive localities'), tr('HBR: Human Biting Rate. Median di lokaliti yang ada vektor sahaja.','HBR: Human Biting Rate. Median across vector-positive localities only.')],
+    [tr('Introduction Sederhana+','Introduction Moderate+'), mod, tr(`${pr} lokaliti dengan parity rate > 0`, `${pr} localities with parity rate > 0`), tr('Bilangan kajian dengan risiko Malaria Introduction Sederhana atau Tinggi.','Studies with Moderate or High Malaria Introduction risk.')],
+    [tr('Median lewat laporan','Median report delay'), lag==null?'–':`${lag}<small> ${tr('hari','days')}</small>`, tr('tarikh kajian ke penghantaran borang','study date to form submission'), tr('Median hari dari tarikh kajian hingga borang dihantar.','Median days from study date to form submission.')],
+    [tr('Maklum balas tindakan','Corrective-action feedback'), `${tind}<small> / ${n}</small>`, tr('tindakan pembetulan dikembalikan (sasaran 14 hari)','corrective actions returned (target 14 days)'), tr('Laporan yang tindakan pembetulannya telah dikembalikan oleh penerima.','Reports whose corrective action was returned by the recipient.')],
+  ].map(([k,v,d,ti])=>`<div class="kpi"><span class="k" ${ti?`title="${esc(ti)}" data-gl`:''}>${k}</span><span class="v">${v}</span><span class="d">${d}</span></div>`).join('');
+}
+
+// ---------- Leaflet map with street / satellite basemaps; falls back to the grid view when tiles are blocked
+let LM = null, LLayer = null, tileOK = 0, tileErr = 0, mapMode = 'leaflet';
+function popupHTML(r){
+  return `<div class="pop-t">${esc(r.lok)}</div><p>${esc(r.mukim)}, ${esc(r.daerah)} · <span class="mono">${r.date}</span><br>${esc(r.klas)}</p>
+  <p><span class="pop-k">${tr('Vektor','Vector')}:</span> <i>${esc(V(r.vecA))}</i>${r.hbr?` · HBR ${fmt(r.hbr,3)}`:''}${r.pr?` · PR ${fmt(r.pr,0)}%`:''}<br>
+  <span class="pop-k">V</span> ${r.v} · <span class="pop-k">R</span> ${r.R} · <span class="pop-k">Introduction</span> ${r.I} ${pill(r.iS)}</p>
+  <p>${links(r)}</p><p><a class="lnk" href="#" data-open="${esc(r.ref)}">${tr('Lihat rekod penuh','View full record')} ↓</a></p>`;
+}
+let noteKey = null;
+const NOTES = {
+  nolib: () => tr('Pustaka peta tidak dapat dimuatkan (tiada sambungan internet). Paparan grid koordinat digunakan. Pautan <b>Peta jalan</b> dan <b>Satelit</b> pada setiap rekod masih berfungsi.', 'The map library could not load (no internet connection). A coordinate grid view is shown instead. The <b>Street map</b> and <b>Satellite</b> links on each record still work.'),
+  blocked: () => tr('Peta jalan dan satelit tidak dapat dimuatkan dalam paparan ini, kerana tetingkap ini menyekat imej peta luar. Paparan grid koordinat digunakan. Untuk peta penuh, buka fail HTML terus dalam Chrome atau Edge. Pautan <b>Peta jalan</b> dan <b>Satelit</b> pada setiap rekod masih berfungsi.', 'Street and satellite maps cannot load in this view because it blocks outside map images. A coordinate grid view is shown instead. For the full map, open the HTML file directly in Chrome or Edge. The <b>Street map</b> and <b>Satellite</b> links on each record still work.')};
+function useFallback(key){
+  if (mapMode === 'svg') return;
+  mapMode = 'svg'; noteKey = key;
+  $('#lmap').hidden = true; $('#map').hidden = false; $('#baseWrap').hidden = true;
+  $('#mapnote').hidden = false;
+  $('#mapnote').innerHTML = NOTES[key]();
+  render();
+}
+function initLeaflet(){
+  if (!window.L){ useFallback('nolib'); return; }
+  $('#kinLeg').hidden = true;
+  LM = L.map('lmap', {zoomControl:true, scrollWheelZoom:false, tap:true}).setView([6.0,116.65], 9);
+  const street = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Peta &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'});
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Imej &copy; Esri, Maxar, Earthstar Geographics'});
+  const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Label &copy; Esri'});
+  const hybrid = L.layerGroup([L.tileLayer(sat._url,{maxZoom:19, attribution:sat.options.attribution}), labels]);
+  [street, sat, labels].forEach(l => { l.on('tileload', ()=>tileOK++); l.on('tileerror', ()=>tileErr++); });
+  hybrid.eachLayer(l => { l.on('tileload', ()=>tileOK++); l.on('tileerror', ()=>tileErr++); });
+  LM.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+  street.addTo(LM);
+  const bases = {street, hybrid}; let curBase = street;
+  $('#fBase').onchange = e => { LM.removeLayer(curBase); curBase = bases[e.target.value]; curBase.addTo(LM); };
+  L.control.scale({metric:true, imperial:false}).addTo(LM);
+  L.circleMarker([6.075,116.558], {radius:5, color:'#555', weight:1, fillColor:'#888', fillOpacity:.9, interactive:false}).bindTooltip(tr('G. Kinabalu','Mt Kinabalu'),{permanent:false}).addTo(LM);
+  LLayer = L.layerGroup().addTo(LM);
+  LM.on('popupopen', e => { const a = e.popup.getElement().querySelector('[data-open]'); if (a) a.onclick = ev => { ev.preventDefault(); openRow(a.dataset.open); }; });
+  setTimeout(() => { if (tileOK === 0) useFallback('blocked'); }, 6000);
+}
+function tipHTML(r){
+  return `<b>${esc(r.lok)}</b><br>${esc(r.mukim)}, ${esc(r.daerah)} · ${r.date}<br>${esc(r.klas)}<br>`+
+    `${tr('Vektor dewasa','Adult vector')}: <i>${esc(V(r.vecA))}</i>${r.vecL && r.vecL!=='Tiada' ? `<br>${tr('Larva vektor','Vector larvae')}: <i>${esc(V(r.vecL))}</i>` : ''}<br>`+
+    `HBR ${fmt(r.hbr,3)} (${tr('dalam','indoor')} ${fmt(r.hbrIn,2)}, ${tr('luar','outdoor')} ${fmt(r.hbrOut,2)})`+
+    `${r.rdIn||r.rdOut ? `<br>Resting density ${tr('dalam','indoor')} ${fmt(r.rdIn,2)}, ${tr('luar','outdoor')} ${fmt(r.rdOut,2)}` : ''}`+
+    `<br>Parity rate ${r.pr ? fmt(r.pr,0)+'%' : '–'} · ${tr('Sporozoit','Sporozoite')} ${fmt(r.sr,2)}`+
+    `<br>V ${r.v} (${esc(V(r.vS))}) · R ${r.R} (${esc(V(r.rS))})<br>Introduction <b>${r.I} (${esc(V(r.iS))})</b>`+
+    `${r.wb!=null ? `<br>Wall bioassay ${fmt(r.wb,1)}% · Bednet ${fmt(r.bb,1)}%` : ''}<br><span style="opacity:.7">${tr('Klik untuk pautan peta &amp; rekod penuh','Click for map links &amp; full record')}</span>`;
+}
+function leafletView(rs){
+  if (!LM) return;
+  LM.invalidateSize();
+  LLayer.clearLayers();
+  const order = {Rendah:0,Sederhana:1,Tinggi:2}, pts = [];
+  [...rs].filter(r=>r.lat!=null).sort((a,b)=>(isVec(a)-isVec(b))||(order[a.iS]-order[b.iS])).forEach(r=>{
+    const c = getComputedStyle(document.documentElement).getPropertyValue({Rendah:'--good',Sederhana:'--warn',Tinggi:'--crit'}[r.iS]).trim(), v = isVec(r);
+    const m = L.circleMarker([r.lat, r.lon], {radius: 8, color: v?'#111111':'#ffffff', weight: v?3:2, fillColor: c, fillOpacity: 1});
+    if (!matchMedia('(hover: none)').matches) m.bindTooltip(tipHTML(r), {direction:'top', offset:[0,-10], opacity:1});
+    m.bindPopup(tipHTML(r).replace(/<br><span style="opacity:.7">.*$/,'') + `<p style="margin-top:8px">${links(r)}</p><p><a class="lnk" href="#" data-open="${esc(r.ref)}">${tr('Lihat rekod penuh','View full record')} ↓</a></p>`, {maxWidth:280});
+    m.addTo(LLayer); pts.push([r.lat, r.lon]);
+  });
+  if (pts.length) LM.fitBounds(pts, {padding:[30,30], maxZoom:13});
+}
+
+// ---------- Map fallback (equirectangular, lat-corrected)
+let B = {x0:115.72, x1:117.18, y0:5.18, y1:6.62};
+function mapView(rs){
+  const g = DATA.filter(r=>r.lat!=null); if (g.length){ const lo=g.map(r=>r.lon), la=g.map(r=>r.lat); B = {x0:Math.min(...lo)-0.08, x1:Math.max(...lo)+0.08, y0:Math.min(...la)-0.08, y1:Math.max(...la)+0.08}; }
+  const W = chartW('#s-peta',640), k = Math.cos(6*Math.PI/180), H = Math.round(W*(B.y1-B.y0)/((B.x1-B.x0)*k));
+  const X = lon => (lon-B.x0)/(B.x1-B.x0)*W, Y = lat => H-(lat-B.y0)/(B.y1-B.y0)*H;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Peta titik lokaliti kajian">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="var(--bg)" rx="4"/>`;
+  for (let lon=Math.ceil(B.x0*5)/5; lon<=B.x1; lon+=0.2){ const x=X(lon); s+=`<line class="gridl" x1="${x}" x2="${x}" y1="0" y2="${H}"/><text x="${x+3}" y="${H-5}">${lon.toFixed(1)}°E</text>`; }
+  for (let lat=Math.ceil(B.y0*5)/5; lat<=B.y1; lat+=0.2){ const y=Y(lat); s+=`<line class="gridl" x1="0" x2="${W}" y1="${y}" y2="${y}"/><text x="4" y="${y-3}">${lat.toFixed(1)}°N</text>`; }
+  // district labels at centroid of all records (stable regardless of filter)
+  const cent = {}; DATA.forEach(r=>{ if(r.lat==null) return; (cent[r.daerah] ??= []).push(r); });
+  Object.entries(cent).forEach(([d,a])=>{ const lx=a.reduce((p,r)=>p+r.lon,0)/a.length, ly=Math.max(...a.map(r=>r.lat));
+    s+=`<text x="${X(lx)}" y="${Y(ly)-14}" text-anchor="middle" style="font-family:var(--f-display);font-size:13px;font-weight:600;fill:var(--ink2);letter-spacing:.08em">${esc(d.toUpperCase())}</text>`; });
+  const kx=X(116.558), ky=Y(6.075);
+  s+=`<path d="M${kx-6},${ky+5} L${kx},${ky-6} L${kx+6},${ky+5} Z" fill="var(--muted)" opacity=".7"/><text x="${kx+9}" y="${ky+4}">${tr('G. Kinabalu','Mt Kinabalu')}</text>`;
+  const order = {Rendah:0,Sederhana:1,Tinggi:2};
+  [...rs].filter(r=>r.lat!=null).sort((a,b)=>order[a.iS]-order[b.iS]).forEach(r=>{
+    const c = RISKC[r.iS], v = isVec(r);
+    const t = tipHTML(r);
+    s += `<circle class="pt" data-ref="${esc(r.ref)}" data-tip="${esc(t)}" cx="${X(r.lon).toFixed(1)}" cy="${Y(r.lat).toFixed(1)}" r="7" fill="${c}" stroke="${v?'var(--ink)':'var(--panel)'}" stroke-width="${v?3:2}"/>`;
+  });
+  s += `</svg>`;
+  $('#map').innerHTML = s; bindTips($('#map'));
+  $('#map').querySelectorAll('.pt').forEach(p => p.onclick = () => openRow(p.dataset.ref));
+}
+
+// ---------- Trend by quarter
+function trend(rs){
+  const [Y0,Y1] = yearSpan(); const qs = []; for (let y=Y0; y<=Y1; y++) for (let q=1; q<=4; q++) qs.push(`${y} S${q}`);
+  const last = DATA.reduce((m,r)=>r.date>m?r.date:m,''); const lq = `${last.slice(0,4)} S${Math.ceil(+last.slice(5,7)/3)}`;
+  const Q = qs.slice(0, qs.indexOf(lq)+1);
+  const qOf = r => `${r.date.slice(0,4)} S${Math.ceil(+r.date.slice(5,7)/3)}`;
+  const cnt = Q.map(q => { const a = rs.filter(r=>qOf(r)===q); return {q, v:a.filter(isVec).length, n:a.length-a.filter(isVec).length}; });
+  const W=chartW('#trend',560),H=190,L=26,Bm=34,T=8, max=Math.max(4,...cnt.map(c=>c.v+c.n)), top=Math.ceil(max/2)*2;
+  const bw=(W-L)/Q.length, Yv=v=>T+(H-T-Bm)*(1-v/top);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Kajian setiap suku tahun">`;
+  for(let t=0;t<=top;t+=Math.max(1,top/4|0)){ s+=`<line class="gridl" x1="${L}" x2="${W}" y1="${Yv(t)}" y2="${Yv(t)}"/><text x="${L-6}" y="${Yv(t)+3}" text-anchor="end">${t}</text>`; }
+  cnt.forEach((c,i)=>{ const x=L+i*bw+bw*0.18, w=bw*0.64, tipT=`<b>${QL(c.q)}</b><br>${tr('Vektor dijumpai','Vector found')}: ${c.v}<br>${tr('Tiada vektor','No vector')}: ${c.n}`;
+    const y0=Yv(0), yv=Yv(c.v), yn=Yv(c.v+c.n);
+    s+=`<g class="bar" data-tip="${esc(tipT)}"><rect x="${L+i*bw}" y="${T}" width="${bw}" height="${H-T-Bm}" fill="transparent"/>`;
+    if(c.v) s+=`<rect x="${x}" y="${yv}" width="${w}" height="${y0-yv}" fill="var(--accent)" rx="${c.n?0:3}"/>`;
+    if(c.n) s+=`<rect x="${x}" y="${yn}" width="${w}" height="${Math.max(0,yv-yn-2)}" fill="var(--neg)" rx="3"/>`;
+    if(c.v+c.n) s+=`<text x="${x+w/2}" y="${yn-4}" text-anchor="middle" style="fill:var(--ink2)">${c.v+c.n}</text>`;
+    s+=`</g>${bw>=22||c.q.endsWith('S1')||c.q.endsWith('S3')?`<text x="${x+w/2}" y="${H-Bm+14}" text-anchor="middle">${QL(c.q).slice(5)}</text>`:''}`;
+    if(c.q.endsWith('S1')) s+=`<text x="${x+w/2}" y="${H-Bm+27}" text-anchor="middle" style="fill:var(--ink2)">${c.q.slice(0,4)}</text>`;
+  });
+  s+=`<line x1="${L}" x2="${W}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="var(--muted)"/></svg>`;
+  const old = rs.filter(r=>+r.date.slice(0,4)<Y0);
+  $('#trend').innerHTML = s + (old.length? `<p class="note">${tr(`${old.length} kajian sebelum ${Y0}`, `${old.length} ${old.length===1?'study':'studies'} before ${Y0}`)} (${old.map(r=>esc(r.lok)+', '+r.date.slice(0,7)).join('; ')}) ${tr('tidak dipaparkan dalam carta ini.', old.length===1?'is not shown in this chart.':'are not shown in this chart.')}</p>`:'');
+  bindTips($('#trend'));
+}
+
+// ---------- HBR dot timeline
+function hbrChart(rs){
+  const a = rs.filter(r=>isVec(r) && r.hbr!=null && +r.date.slice(0,4)>=yearSpan()[0]);
+  if(!a.length){ $('#hbr').innerHTML=`<p class="empty">${tr('Tiada lokaliti positif vektor dalam pilihan ini.','No vector-positive localities in this selection.')}</p>`; return; }
+  const W=chartW('#hbr',560),H=170,L=38,Bm=22,T=10;
+  const [Y0,Y1] = yearSpan(); const t0=+new Date(`${Y0}-01-01`), t1=+new Date(`${Y1}-12-31`);
+  const X=d=>L+(W-L-8)*((+new Date(d))-t0)/(t1-t0);
+  const top=Math.max(0.3, Math.ceil(Math.max(...a.map(r=>r.hbr))*10)/10), Yv=v=>T+(H-T-Bm)*(1-v/top);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="HBR lokaliti positif vektor mengikut tarikh">`;
+  for(let i=0;i<=3;i++){ const v=top*i/3; s+=`<line class="gridl" x1="${L}" x2="${W}" y1="${Yv(v)}" y2="${Yv(v)}"/><text x="${L-6}" y="${Yv(v)+3}" text-anchor="end">${v.toFixed(2)}</text>`; }
+  Array.from({length:Y1-Y0+1},(_,i)=>String(Y0+i)).forEach(y=>{ const x=X(`${y}-01-01`); s+=`<line class="gridl" x1="${x}" x2="${x}" y1="${T}" y2="${H-Bm}"/><text x="${x+3}" y="${H-6}">${y}</text>`; });
+  const yrs = {}; a.forEach(r=>(yrs[r.date.slice(0,4)] ??= []).push(r.hbr));
+  Object.entries(yrs).forEach(([y,v])=>{ const m=median(v), x0=X(`${y}-01-01`), x1=X(`${y}-12-31`);
+    s+=`<line x1="${x0+4}" x2="${x1-4}" y1="${Yv(m)}" y2="${Yv(m)}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4" opacity=".7" data-tip="${esc(`<b>${tr('Median','Median')} ${y}</b>: ${fmt(m,3)} (n=${v.length})`)}"/>`; });
+  a.forEach(r=>{ const t=`<b>${esc(r.lok)}</b> · ${r.date}<br>HBR ${fmt(r.hbr,3)} (${tr('dalam','indoor')} ${fmt(r.hbrIn,2)}, ${tr('luar','outdoor')} ${fmt(r.hbrOut,2)})${r.pr?'<br>Parity rate '+fmt(r.pr,0)+'%':''}`;
+    s+=`<circle class="pt" data-ref="${esc(r.ref)}" data-tip="${esc(t)}" cx="${X(r.date)}" cy="${Yv(r.hbr)}" r="5" fill="${r.pr>0?'var(--crit)':'var(--accent)'}" stroke="var(--panel)" stroke-width="2"/>`; });
+  s+=`<line x1="${L}" x2="${W}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="var(--muted)"/></svg>`;
+  $('#hbr').innerHTML = s + `<div class="legend"><span><i style="background:var(--accent)"></i>${tr('Kajian','Study')}</span><span><i style="background:var(--crit)"></i>${tr('Parity rate &gt; 0 (populasi berumur)','Parity rate &gt; 0 (older population)')}</span><span>– – ${tr('median tahunan','yearly median')}</span></div>`;
+  bindTips($('#hbr')); $('#hbr').querySelectorAll('.pt').forEach(p=>p.onclick=()=>openRow(p.dataset.ref));
+}
+
+// ---------- Mukim + cadangan bars
+function mukim(rs){
+  const m={}; rs.forEach(r=>{ const o=(m[r.mukim] ??= {n:0,v:0,mod:0,d:r.daerah}); o.n++; if(isVec(r)) o.v++; if(r.iS!=='Rendah') o.mod++; });
+  const arr=Object.entries(m).sort((a,b)=>b[1].n-a[1].n||b[1].v-a[1].v).slice(0,12), max=Math.max(1,...arr.map(a=>a[1].n));
+  $('#mukim').innerHTML = arr.length? arr.map(([k,o])=>`<div class="hbar" data-tip="${esc(`<b>${k}</b> (${o.d})<br>${tr(`${o.n} kajian · ${o.v} positif vektor · ${o.mod} Introduction Sederhana+`, `${o.n} studies · ${o.v} vector-positive · ${o.mod} Introduction Moderate+`)}`)}">
+    <span>${esc(V(k))}${o.mod?` <span class="pill p-Sederhana" style="font-size:10px;padding:0 5px">${o.mod}</span>`:''}</span>
+    <span class="t">${o.v?`<span style="width:${100*o.v/max}%;background:var(--accent);border-radius:${o.n-o.v?0:'0 3px 3px 0'}"></span>`:''}${o.n-o.v?`<span style="width:${100*(o.n-o.v)/max}%;background:var(--neg)"></span>`:''}</span>
+    <span class="n">${o.v}/${o.n}</span></div>`).join('') + `<p class="note">${tr('Bar teal = positif vektor. Lencana kuning = bilangan kajian Introduction Sederhana.','Teal bar = vector-positive. Yellow badge = number of Moderate Introduction studies.')} ${Object.keys(m).length>12?tr(`Menunjukkan 12 daripada ${Object.keys(m).length} mukim.`, `Showing 12 of ${Object.keys(m).length} mukims.`):''}</p>` : `<p class="empty">${tr('Tiada rekod.','No records.')}</p>`;
+  bindTips($('#mukim'));
+}
+function cad(rs){
+  const c={}; rs.forEach(r=>r.cad.forEach(x=>c[x]=(c[x]||0)+1));
+  const arr=Object.entries(c).sort((a,b)=>b[1]-a[1]), max=Math.max(1,...arr.map(a=>a[1]));
+  $('#cad').innerHTML = arr.length? arr.map(([k,n])=>`<div class="hbar"><span>${esc(V(k))}</span><span class="t"><span style="width:${100*n/max}%;background:var(--accent)"></span></span><span class="n">${n}</span></div>`).join('') : `<p class="empty">${tr('Tiada rekod.','No records.')}</p>`;
+}
+
+// ---------- Alerts (rule-based, follows filter)
+function alerts(rs){
+  const out=[];
+  rs.filter(r=>r.wb!=null && r.wb<80).forEach(r=>out.push(['crit','Bioassay',`${r.lok}: wall bioassay ${fmt(r.wb,1)}%`,tr(`Di bawah ambang 80%. Semak kualiti dan baki racun IRS, pertimbang semburan semula. Bednet bioassay ${fmt(r.bb,0)}%.`, `Below the 80% threshold. Check IRS quality and residual insecticide; consider re-spraying. Bednet bioassay ${fmt(r.bb,0)}%.`),r.ref]));
+  rs.filter(r=>r.iS!=='Rendah').forEach(r=>out.push(['warn',tr('Risiko','Risk'),`${r.lok}: Introduction ${V(r.iS)} (${r.I})`,`V ${r.v} (${V(r.vS)}) · R ${r.R} (${V(r.rS)}) · ${r.klas}, ${r.date}`,r.ref]));
+  const prs = rs.filter(r=>r.pr>0); if(prs.length){ const lo=fmt(Math.min(...prs.map(r=>r.pr)),0), hi=fmt(Math.max(...prs.map(r=>r.pr)),0);
+    out.push(['warn','Parity',tr(`${prs.length} lokaliti dengan parity rate ${lo}–${hi}%`, `${prs.length} localities with parity rate ${lo}–${hi}%`),`${prs.map(r=>r.lok).join(', ')}. ${tr('Populasi vektor berumur, berpotensi menularkan.','Older vector population, able to transmit.')}`,prs[0].ref]); }
+  const chk = tr('Semak data','Check data');
+  rs.filter(r=>!isVec(r) && /leucosphyrus/i.test(r.nonA||'')).forEach(r=>out.push(['warn',chk,tr(`${r.lok}: An. leucosphyrus grp. direkod sebagai bukan vektor`, `${r.lok}: An. leucosphyrus grp. recorded as non-vector`),tr(`Kumpulan ini merangkumi An. balabacensis. HBR ${fmt(r.hbr,2)} tetapi R = ${r.R}. Sahkan pengenalpastian spesies.`, `This group includes An. balabacensis. HBR ${fmt(r.hbr,2)} but R = ${r.R}. Confirm species identification.`),r.ref]));
+  rs.filter(r=>!isVec(r) && r.hbr>0.5).forEach(r=>out.push(['warn',chk,tr(`${r.lok}: HBR ${fmt(r.hbr,2)} tanpa vektor`, `${r.lok}: HBR ${fmt(r.hbr,2)} with no vector`),tr('Nilai HBR kelihatan merangkumi semua spesies nyamuk, bukan vektor sahaja.','The HBR value appears to include all mosquito species, not vectors only.'),r.ref]));
+  rs.filter(r=>r.case && r.case.klas==='Indigenous' && /knowlesi/i.test(r.case.parasit||'')).forEach(r=>out.push(['warn',chk,tr(`${r.lok}: kes P. knowlesi diklasifikasikan Indigenous`, `${r.lok}: P. knowlesi case classified as Indigenous`),tr('Jangkitan P. knowlesi biasanya dikelaskan Zoonotik Malaria. Sahkan klasifikasi kes.','P. knowlesi infections are usually classified as Zoonotic Malaria. Confirm the case classification.'),r.ref]));
+  $('#alerts').innerHTML = out.length? out.map(([c,t,h,p,ref])=>`<div class="alert ${c}" role="button" tabindex="0" data-ref="${esc(ref)}" style="cursor:pointer"><span class="tag">${t}</span><strong>${esc(h)}</strong><p>${esc(p)}</p></div>`).join('') : `<p class="empty">${tr('Tiada isu dalam pilihan ini.','No issues in this selection.')}</p>`;
+  $('#alerts').querySelectorAll('.alert').forEach(a=>{ a.onclick=()=>openRow(a.dataset.ref); a.onkeydown=e=>{ if(e.key==='Enter') openRow(a.dataset.ref); }; });
+}
+
+// ---------- Table
+let sortK='date', sortDir=-1, openRef=null;
+document.querySelectorAll('#tbl th[data-k]').forEach(th=>th.onclick=()=>{ const k=th.dataset.k; if(sortK===k) sortDir*=-1; else { sortK=k; sortDir=['date','hbr','pr','v','R','I','lag'].includes(k)?-1:1; } render(); });
+function detail(r){
+  const kv=(k,v,cls='')=>`<div class="${cls}"><div class="k">${k}</div><div class="v">${v ?? '–'}</div></div>`;
+  const c=r.case;
+  return `<tr class="detail"><td colspan="14">${detailInner(r)}</td></tr>`;
+}
+function detailInner(r){
+  const kv=(k,v,cls='')=>`<div class="${cls}"><div class="k">${k}</div><div class="v">${v ?? '–'}</div></div>`;
+  const c=r.case, T=tr;
+  return `<div class="dgrid">
+    ${kv(T('Objektif','Objective'), esc(V(r.obj)))}${kv(T('Status lokaliti','Locality status'), esc(V(r.stlok||'–')))}${kv(T('Koordinat','Coordinates'), r.lat!=null?`<span class="mono">${r.lat.toFixed(5)}, ${r.lon.toFixed(5)}</span>`:'–')}${kv(T('Altitud','Altitude'), r.alt!=null?r.alt+' m':'–')}
+    ${kv(T('Penempatan','Settlement'), esc(r.penempatan))}${kv(T('Premis','Premises'), esc(r.premis))}${kv(T('Topografi','Topography'), esc(r.topo))}${kv(T('Peta','Map'), links(r))}
+    ${kv(T('Vegetasi','Vegetation'), esc(r.veg),'wide')}${kv(T('Jenis water body','Water body types'), esc(r.air),'wide')}
+    ${kv(T('Larva vektor','Vector larvae'), `<span class="vec">${esc(V(r.vecL))}</span>`)}${kv('Breeding Index / BPR', `${fmt(r.bi,2)} / ${fmt(r.bpr,2)}%`)}${kv(T('HBR dalam / luar','HBR indoor / outdoor'), `${fmt(r.hbrIn,2)} / ${fmt(r.hbrOut,2)}`)}${kv(T('Resting density dalam / luar','Resting density indoor / outdoor'), `${fmt(r.rdIn,2)} / ${fmt(r.rdOut,2)}`)}
+    ${kv(T('Sporozoit / Oocyst rate','Sporozoite / Oocyst rate'), `${fmt(r.sr,2)} / ${fmt(r.oo,2)}`)}${kv('Bioassay WB / BB', r.wb!=null?`${fmt(r.wb,1)}% / ${fmt(r.bb,1)}%`:V('Tiada'))}${kv(T('Potensi jangkitan','Transmission potential'), esc(V(r.potensi)))}${kv(T('Punca jangkitan','Source of infection'), esc(V(r.punca)))}
+    ${kv(T('Spesies dewasa bukan vektor','Non-vector adult species'), `<span class="vec">${esc(V(r.nonA))}</span>`,'wide')}${kv(T('Spesies larva bukan vektor','Non-vector larval species'), `<span class="vec">${esc(V(r.nonL))}</span>`,'wide')}
+    ${kv(T('Cadangan penambahbaikan','Recommended actions'), esc(r.cad.map(V).join(', ')),'wide')}
+    ${c?`<div class="wide casebox"><div class="k">${T('Maklumat kes berkaitan','Related case details')}</div><div class="v">${T('Tarikh notifikasi','Notification date')} ${esc(c.notif)} · ${T('Umur','Age')} ${esc(LANG==='en'?String(c.umur||'').replace(/Tahun/i,'years'):c.umur)} · ${esc(V(c.jantina))} · ${esc(V(c.klas)||T('Klasifikasi tidak direkod','Classification not recorded'))} · <i>${esc(c.parasit)}</i><br>${T('Alamat','Address')}: ${esc(c.alamat)} &nbsp; ${links(r)}</div></div>`:''}
+    ${kv(T('Ulasan Pegawai Sains Kaji Serangga Daerah','District Entomologist comments'), `<div class="ulasan">${esc(r.ulasanD)}</div>`,'wide')}
+    ${r.ulasanN?kv(T('Ulasan Pegawai Sains Kaji Serangga Negeri','State Entomologist comments'), `<div class="ulasan">${esc(r.ulasanN)}</div>`,'wide'):''}
+    ${kv(T('Tindakan pembetulan penerima','Recipient corrective action'), r.tindakan?esc(r.tindakan):`<span style="color:var(--crit-ink)">${T('Belum dikembalikan','Not yet returned')}</span>`,'wide')}
+    ${kv(T('Tarikh hantar borang','Form submitted'), `${r.sub} (${T(`${r.lag} hari selepas kajian`, `${r.lag} days after study`)})`)}
+  </div>`;
+}
+function cards(a){
+  $('#cards').innerHTML = a.length ? a.map(r=>`<article class="rcard r-${esc(r.iS)}${openRef===r.ref?' open':''}" data-ref="${esc(r.ref)}" tabindex="0">
+    <div class="rc-top"><span>${r.date} · ${esc(r.ref)}</span>${pill(r.iS)}</div>
+    <div class="rc-lok">${esc(r.lok)}</div><div class="rc-sub">${esc(r.mukim)}, ${esc(r.daerah)} · ${esc(r.klas)}</div>
+    <div class="rc-nums"><span>${tr('Vektor','Vector')}: <i class="vec ${isVec(r)?'':'none'}">${esc(V(r.vecA))}</i></span><span>HBR <b>${fmt(r.hbr,3)}</b></span>${r.pr?`<span>PR <b>${fmt(r.pr,0)}%</b></span>`:''}<span>V <b>${r.v}</b> · R <b>${r.R}</b> · I <b>${r.I}</b></span><span>${tr('Lewat','Delay')} <b>${r.lag}</b> ${tr('hari','days')}</span></div>
+    <div>${links(r)}</div>${openRef===r.ref?detailInner(r):''}</article>`).join('') : `<p class="empty">${tr('Tiada rekod sepadan. Cuba set semula penapis.','No matching records. Try resetting the filters.')}</p>`;
+  $('#cards').querySelectorAll('.rcard').forEach(el=>{ const go=()=>{ openRef = openRef===el.dataset.ref?null:el.dataset.ref; cards(a); };
+    el.onclick=e=>{ if(e.target.closest('a')||e.target.closest('.dgrid')) return; go(); }; el.onkeydown=e=>{ if(e.key==='Enter') go(); }; });
+}
+function table(rs){
+  const a=[...rs].sort((x,y)=>{ let p=x[sortK], q=y[sortK]; if(sortK==='vecA'){p=isVec(x)?1:0;q=isVec(y)?1:0;} if(p==null) return 1; if(q==null) return -1; return (p>q?1:p<q?-1:0)*sortDir; });
+  const sv = `${sortK}|${sortDir}`; $('#sortSel').value = [...$('#sortSel').options].some(o=>o.value===sv) ? sv : $('#sortSel').value;
+  if (isMobile()) { cards(a); return; }
+  document.querySelectorAll('#tbl th[data-k]').forEach(th=>{ if(th.dataset.k===sortK) th.setAttribute('aria-sort', sortDir>0?'ascending':'descending'); else th.removeAttribute('aria-sort'); });
+  $('#tbl tbody').innerHTML = a.length? a.map(r=>`<tr class="row${openRef===r.ref?' open':''}" data-ref="${esc(r.ref)}" tabindex="0">
+    <td class="mono">${r.date}</td><td class="mono">${esc(r.ref)}</td><td>${esc(r.daerah)}</td><td>${esc(r.mukim)}</td><td>${esc(r.lok)}</td><td>${esc(r.klas)}</td>
+    <td class="vec ${isVec(r)?'':'none'}">${esc(V(r.vecA))}</td><td class="num">${fmt(r.hbr,3)}</td><td class="num">${r.pr?fmt(r.pr,0):'–'}</td><td class="num">${r.v}</td><td class="num">${r.R}</td><td>${pill(r.iS)} <span class="mono">${r.I}</span></td><td class="num">${r.lag}</td><td>${links(r)}</td></tr>${openRef===r.ref?detail(r):''}`).join('')
+    : `<tr><td colspan="14" class="empty">${tr('Tiada rekod sepadan. Cuba set semula penapis.','No matching records. Try resetting the filters.')}</td></tr>`;
+  $('#tbl tbody').querySelectorAll('tr.row').forEach(tr=>{ const go=()=>{ openRef = openRef===tr.dataset.ref?null:tr.dataset.ref; table(rs); };
+    tr.onclick=e=>{ if(e.target.closest('a')) return; go(); }; tr.onkeydown=e=>{ if(e.key==='Enter') go(); }; });
+}
+function openRow(ref){
+  if(!filtered().some(r=>r.ref===ref)){ F.forEach(id=>$(id).value=''); fillMukim(); }
+  openRef=ref; render();
+  const el=document.querySelector(`${isMobile()?'#cards .rcard':'#tbl tr.row'}[data-ref="${CSS.escape(ref)}"]`); if(el) el.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'center'});
+}
+
+// ---------- Data quality (whole dataset)
+function dq(){
+  const n=DATA.length, lag=DATA.map(r=>r.lag), noRD=DATA.filter(r=>r.rdIn==null && r.rdOut==null).length;
+  const byY={}; DATA.forEach(r=>(byY[r.date.slice(0,4)] ??= []).push(r.lag));
+  const yrs = Object.entries(byY).map(([y,v])=>`${y} ${median(v)}`).join(', '), tind = DATA.filter(r=>r.tindakan).length, st = DATA.filter(r=>r.ulasanN).length, nogps = DATA.filter(r=>r.lat==null).length;
+  $('#dq').innerHTML = [
+    tr(`Median ${median(lag)} hari dari tarikh kajian ke penghantaran borang (maks ${Math.max(...lag)}). Median mengikut tahun: ${yrs}.`, `Median ${median(lag)} days from study date to form submission (max ${Math.max(...lag)}). Median by year: ${yrs}.`),
+    tr(`Tindakan pembetulan dikembalikan untuk ${tind} daripada ${n} laporan. Ulasan peringkat negeri ada pada ${st}.`, `Corrective action returned for ${tind} of ${n} reports. State-level comments on ${st}.`),
+    tr(`Resting density kosong pada ${noRD} daripada ${n} rekod.`, `Resting density is blank on ${noRD} of ${n} records.`),
+    DQX.gps ? tr(`${DQX.gps} koordinat ditaip dengan simbol darjah atau lat/long dalam satu sel (telah dibetulkan untuk peta).`, `${DQX.gps} coordinates were typed with a degree symbol or with lat/long in one cell (corrected for the map).`) : tr('Tiada masalah format koordinat.','No coordinate format problems.'),
+    tr(`${nogps} rekod tiada koordinat GPS.`, `${nogps} records have no GPS coordinates.`),
+    DQX.nil ? tr('Nilai teks seperti "Nil" bercampur dengan nombor dalam lajur parameter. Nama spesies dieja dalam pelbagai bentuk.', 'Text values such as "Nil" are mixed with numbers in parameter columns. Species names are spelled in several ways.') : null,
+    ...(()=>{ const m={}; DATA.forEach(r=>(m[r.R] ??= new Set()).add(r.rS)); return Object.entries(m).filter(([k,s])=>s.size>1).map(([k])=>tr(`Nilai R = ${k} muncul dengan lebih daripada satu status Receptivity. Sahkan titik potong.`, `R = ${k} appears with more than one Receptivity level. Confirm the cut-off.`)); })(),
+  ].filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join('');
+}
+
+function render(){
+  const rs=filtered();
+  $('#count').textContent = isMobile() ? `${rs.length}/${DATA.length}` : tr(`${rs.length} daripada ${DATA.length} kajian`, `${rs.length} of ${DATA.length} studies`);
+  kpis(rs); if (mapMode==='leaflet') leafletView(rs); else mapView(rs); trend(rs); hbrChart(rs); mukim(rs); cad(rs); alerts(rs); table(rs);
+}
+function updateMeta(){
+  const d0=DATA[0].date, d1=DATA[DATA.length-1].date, s1=DATA.reduce((m,r)=>r.sub>m?r.sub:m,'');
+  $('#meta').innerHTML = `${tr('Tempoh kajian','Study period')} <b>${d0}</b> ${tr('hingga','to')} <b>${d1}</b><br>${tr('Borang terakhir dihantar','Last form submitted')} ${s1}<br>${tr('Sumber','Source')}: ${esc(IS_DEMO ? tr('Data demo (rekaan)','Demo data (fictional)') : SRC)}<br><a class="glink" href="#glosari">${tr('Glosari singkatan','Glossary')} ↓</a>`;
+  $('#demoBanner').hidden = !IS_DEMO;
+  $('#meta .glink').onclick = e => { e.preventDefault(); $('#glosari').scrollIntoView({behavior:'smooth'}); };
+}
+
+// ---------- Glossary
+const GLOSS = [
+ [['Jenis siasatan','Investigation types'], [
+  ['MEAT','<b>Malaria Entomology Anopheles Tuaran.</b> Nama dashboard penilaian entomologi Anopheles PKK Tuaran ini.','<b>Malaria Entomology Anopheles Tuaran.</b> The name of this PKK Tuaran Anopheles entomology dashboard.'],
+  ['PKK','Pejabat Kesihatan Kawasan.','Pejabat Kesihatan Kawasan (Area Health Office).'],
+  ['ERA','<b>Entomological Risk Assessment.</b> Penilaian risiko entomologi: kajian nyamuk di sesuatu lokaliti untuk menilai risiko malaria.','<b>Entomological Risk Assessment.</b> A mosquito survey in a locality to assess malaria risk.'],
+  ['ERA Lokaliti Receptivity','ERA rutin untuk menentukan tahap <b>Receptivity</b> (kesesuaian lokaliti untuk penularan) di lokaliti yang pernah ada kes.','Routine ERA to set the <b>Receptivity</b> level (how suitable a locality is for transmission) in localities with past cases.'],
+  ['EI','<b>Entomological Investigation.</b> Siasatan entomologi yang dibuat selepas ada kes atau kluster kes.','<b>Entomological Investigation.</b> An entomological investigation carried out after a case or case cluster.'],
+  ['EI Kluster ZM','Siasatan entomologi untuk kluster kes <b>Zoonotik Malaria</b> (ZM), iaitu malaria dari monyet ke manusia, biasanya <i>P. knowlesi</i>.','Investigation of a <b>Zoonotic Malaria</b> (ZM) case cluster: malaria passed from monkeys to people, usually <i>P. knowlesi</i>.'],
+  ['EI Wabak HM','Siasatan entomologi untuk wabak <b>Human Malaria</b> (HM), iaitu malaria yang menular antara manusia, cth. <i>P. malariae</i>.','Investigation of a <b>Human Malaria</b> (HM) outbreak: malaria spread between people, e.g. <i>P. malariae</i>.'],
+  ['VCIA – P6','<b>Vector Control Impact Assessment</b> selepas <b>pusingan ke-6</b> kawalan vektor. Menilai sama ada kawalan vektor boleh dihentikan.','<b>Vector Control Impact Assessment</b> after the <b>6th round</b> of vector control. Decides whether control can stop.'],
+  ['Cleared foci','Lokaliti yang pernah ada kes malaria tetapi kini tiada penularan tempatan.','A locality that had malaria cases but now has no local transmission.'],
+  ['P. knowlesi / P. malariae','<i>Plasmodium</i>, parasit penyebab malaria. <i>P. knowlesi</i> berasal dari monyet; <i>P. malariae</i> parasit malaria manusia.','<i>Plasmodium</i>, the malaria parasite. <i>P. knowlesi</i> comes from monkeys; <i>P. malariae</i> is a human malaria parasite.'],
+ ]],
+ [['Parameter entomologi','Entomological parameters'], [
+  ['Vektor / Vector','Nyamuk yang boleh menularkan malaria, cth. <i>An. balabacensis</i>, <i>An. sundaicus</i>.','A mosquito that can transmit malaria, e.g. <i>An. balabacensis</i>, <i>An. sundaicus</i>.'],
+  ['HBR / HLR','<b>Human Biting Rate / Human Landing Rate.</b> Purata bilangan nyamuk vektor yang hinggap untuk menggigit seorang dalam satu malam (gigitan/orang/malam). Dalam = dalam rumah, luar = luar rumah. Semakin tinggi, semakin besar risiko gigitan.','<b>Human Biting Rate / Human Landing Rate.</b> Average number of vector mosquitoes landing to bite one person in one night (bites/person/night). Indoor and outdoor are counted separately. Higher means more biting risk.'],
+  ['RD','<b>Resting Density.</b> Kepadatan nyamuk vektor yang berehat, dikira per orang-jam tangkapan (pmh).','<b>Resting Density.</b> Density of resting vector mosquitoes, per man-hour of collection (pmh).'],
+  ['pmh','<b>Per man-hour.</b> Per orang per jam tangkapan.','<b>Per man-hour.</b> Per collector per hour.'],
+  ['PR','<b>Parity Rate.</b> Peratus nyamuk betina yang pernah bertelur. PR tinggi bermaksud populasi nyamuk lebih tua, jadi lebih berpotensi menularkan malaria.','<b>Parity Rate.</b> Percentage of female mosquitoes that have laid eggs. A high PR means an older population that is more able to transmit malaria.'],
+  ['SR','<b>Sporozoite Rate.</b> Peratus nyamuk yang membawa sporozoit (peringkat berjangkit) dalam kelenjar air liur. 0 bermaksud tiada nyamuk berjangkit dikesan.','<b>Sporozoite Rate.</b> Percentage of mosquitoes carrying sporozoites (the infective stage) in the salivary glands. 0 means no infective mosquitoes were found.'],
+  ['Oocyst rate','Peratus nyamuk yang mempunyai oosista di perut, iaitu sedang dijangkiti parasit.','Percentage of mosquitoes with oocysts in the gut, meaning they are infected and developing the parasite.'],
+  ['BI','<b>Breeding Index.</b> Indeks pembiakan larva vektor di tempat air yang diperiksa.','<b>Breeding Index.</b> Index of vector larval breeding in the water sites inspected.'],
+  ['BPR','<b>Breeding Positivity Rate.</b> Peratus tempat pembiakan yang positif larva vektor.','<b>Breeding Positivity Rate.</b> Percentage of breeding sites positive for vector larvae.'],
+  ['HLC','<b>Human Landing Catch.</b> Kaedah tangkap nyamuk yang hinggap pada sukarelawan.','<b>Human Landing Catch.</b> Collecting mosquitoes as they land on a volunteer.'],
+  ['An. / Ae. / Cx. / Ma. / Ar.','Genus nyamuk: <i>Anopheles</i>, <i>Aedes</i>, <i>Culex</i>, <i>Mansonia</i>, <i>Armigeres</i>. Hanya <i>Anopheles</i> menularkan malaria.','Mosquito genera: <i>Anopheles</i>, <i>Aedes</i>, <i>Culex</i>, <i>Mansonia</i>, <i>Armigeres</i>. Only <i>Anopheles</i> transmits malaria.'],
+ ]],
+ [['Penilaian risiko','Risk assessment'], [
+  ['V','<b>Vulnerability</b> (kebolehdedahan). Risiko parasit dibawa masuk ke lokaliti, cth. pergerakan penduduk atau pekerja dari kawasan berisiko. Dalam data contoh: Rendah ≤ 20, Sederhana 21–25, Tinggi ≥ 27.','<b>Vulnerability.</b> Risk of the parasite being brought into the locality, e.g. movement of residents or workers from risk areas. In the sample data: Low ≤ 20, Moderate 21–25, High ≥ 27.'],
+  ['R','<b>Receptivity</b> (kesesuaian). Sejauh mana lokaliti sesuai untuk penularan, terutamanya kehadiran dan kepadatan vektor. Dalam data contoh: Rendah 2–7, Sederhana 7–12.','<b>Receptivity.</b> How suitable the locality is for transmission, mainly vector presence and density. In the sample data: Low 2–7, Moderate 7–12.'],
+  ['Introduction','<b>Risiko Malaria Introduction</b> (dalam ulasan disebut TRMR). Gabungan V dan R: risiko malaria menular semula di lokaliti. Rendah 1–2, Sederhana 3–4.','<b>Malaria Introduction risk</b> (called TRMR in comments). Combines V and R: the risk of malaria being re-established in the locality. Low 1–2, Moderate 3–4.'],
+  ['Sederhana+ / Moderate+','Tahap Sederhana atau Tinggi.','Moderate or High level.'],
+  ['Rendah / Sederhana / Tinggi','Tahap risiko: rendah, sederhana, tinggi. Warna titik di peta: hijau, kuning, merah.','Risk level: Low, Moderate, High. Map point colours: green, yellow, red.'],
+ ]],
+ [['Kawalan & intervensi','Control & interventions'], [
+  ['IRS','<b>Indoor Residual Spraying.</b> Semburan racun serangga berbaki pada dinding dalam rumah.','<b>Indoor Residual Spraying.</b> Long-lasting insecticide sprayed on indoor walls.'],
+  ['ORS','<b>Outdoor Residual Spraying.</b> Semburan racun berbaki di luar rumah, cth. sulap atau pondok.','<b>Outdoor Residual Spraying.</b> Residual insecticide sprayed outdoors, e.g. on farm huts.'],
+  ['WB','<b>Wall Bioassay.</b> Ujian kon di dinding yang telah disembur. Kematian nyamuk bawah 80% bermaksud racun tidak lagi berkesan.','<b>Wall Bioassay.</b> Cone test on a sprayed wall. Mosquito mortality below 80% means the insecticide is no longer effective.'],
+  ['BB','<b>Bednet Bioassay.</b> Ujian keberkesanan racun pada kelambu.','<b>Bednet Bioassay.</b> Test of insecticide effectiveness on bed nets.'],
+  ['LLIN','<b>Long-Lasting Insecticidal Net.</b> Kelambu berubat tahan lama.','<b>Long-Lasting Insecticidal Net.</b> A treated bed net that stays effective for years.'],
+  ['ITN','<b>Insecticide-Treated Net.</b> Kelambu yang dirawat racun serangga.','<b>Insecticide-Treated Net.</b> A bed net treated with insecticide.'],
+  ['ITC','<b>Insecticide-Treated Clothing.</b> Pakaian yang dirawat racun serangga, untuk pekerja di kebun atau hutan.','<b>Insecticide-Treated Clothing.</b> Treated clothing for people working in plantations or forest.'],
+  ['Repellent','Ubat penghalau nyamuk yang disapu pada kulit.','Mosquito repellent applied to the skin.'],
+  ['ACD','<b>Active Case Detection.</b> Pengesanan kes secara aktif melalui saringan darah penduduk.','<b>Active Case Detection.</b> Actively finding cases by blood screening of residents.'],
+  ['MBS','<b>Mass Blood Survey.</b> Saringan darah beramai-ramai untuk seluruh penduduk lokaliti.','<b>Mass Blood Survey.</b> Blood screening of the whole locality population.'],
+  ['LSM Type 3','<b>Larval Source Management.</b> Pengurusan tempat pembiakan larva (cth. menimbus, mengalirkan air, larvisid). “Type 3” ialah kategori mengikut garis panduan program.','<b>Larval Source Management.</b> Managing larval breeding sites (e.g. filling, draining, larviciding). “Type 3” is a category in the programme guidelines.'],
+  ['Perbincangan Kumpulan Kecil / Ceramah / Pameran','Aktiviti pendidikan kesihatan kepada penduduk.','Small group discussion / health talk / exhibition: health education for residents.'],
+ ]],
+ [['Lain-lain','Other'], [
+  ['Kg. / Ldg. / G.','Kampung / Ladang / Gunung.','Kampung (village) / Ladang (estate) / Gunung (mountain).'],
+  ['S1–S4 / Q1–Q4','Suku tahun: S1 Jan–Mac, S2 Apr–Jun, S3 Jul–Sep, S4 Okt–Dis.','Quarters: Q1 Jan–Mar, Q2 Apr–Jun, Q3 Jul–Sep, Q4 Oct–Dec.'],
+  ['Lewat (hari) / Delay (days)','Bilangan hari dari tarikh kajian hingga borang laporan dihantar.','Days from the study date until the report form was submitted.'],
+  ['Tindakan pembetulan','Maklum balas tindakan oleh penerima laporan, perlu dikembalikan dalam 14 hari.','Corrective-action feedback from the report recipient, due back within 14 days.'],
+  ['GPS','Koordinat lokasi (latitud, longitud).','Location coordinates (latitude, longitude).'],
+ ]],
+];
+function renderGloss(){
+  $('#gloss').innerHTML = GLOSS.map(([g,items])=>`<div><h3>${tr(g[0],g[1])}</h3><dl>${items.map(([k,bm,en])=>`<dt>${k}</dt><dd>${tr(bm,en)}</dd>`).join('')}</dl></div>`).join('');
+  const TH = {hbr:tr('HBR: Human Biting Rate, gigitan vektor/orang/malam','HBR: Human Biting Rate, vector bites/person/night'), pr:tr('PR: Parity Rate, % nyamuk betina pernah bertelur','PR: Parity Rate, % of females that have laid eggs'), v:tr('V: Vulnerability (kebolehdedahan)','V: Vulnerability'), R:tr('R: Receptivity (kesesuaian lokaliti untuk penularan)','R: Receptivity (suitability for transmission)'), I:tr('Risiko Malaria Introduction (gabungan V dan R)','Malaria Introduction risk (combines V and R)'), lag:tr('Hari dari tarikh kajian hingga borang dihantar','Days from study date to form submission'), klas:tr('Jenis siasatan: ERA, EI atau VCIA (lihat glosari)','Investigation type: ERA, EI or VCIA (see glossary)'), vecA:tr('Spesies nyamuk vektor peringkat dewasa yang ditangkap','Adult vector species caught')};
+  document.querySelectorAll('#tbl th[data-k]').forEach(th=>{ if(TH[th.dataset.k]){ th.title=TH[th.dataset.k]; th.dataset.gl=''; } });
+}
+// ---------- Upload: read the Google Form Excel export in the browser, clean it, drop case names
+const COL = {ts:'Timestamp', ref:'No. Rujukan Kajian', tarikh:'Tarikh', klas:'Klasifikasi Siasatan', obj:'Objektif Siasatan', tambah:'Tambah Maklumat Kes (jika berkaitan)',
+  notif:'Tarikh Notifikasi', umur:'Umur Kes', jantina:'Jantina', alamat:'Alamat', klasKes:'Klasifikasi Kes', parasit:'Jenis Parasit',
+  kawasan:'Kawasan / Bahagian', daerah:'Daerah', mukim:'Mukim', lok:'Lokaliti', lon:'Longitud', lat:'Latitud', alt:'Altitud',
+  stlok:'Status Lokaliti', penempatan:'Jenis Penempatan', premis:'Jenis Premis', topo:'Keadaan Topografi', veg:'Jenis Vegetasi', air:'Jenis Water Body',
+  vecL:'Spesis Larva (vektor)', nonL:'Spesis Larva (bukan vektor)', bi:'Breeding Indeks', bpr:'Breeding Positivity Rate', vecA:'Spesis Dewasa (vektor)', nonA:'Spesis Dewasa (bukan vektor)',
+  hbrIn:'Indoor Human Biting Rate (HBR) or Human Landing Rate (HLR)', hbrOut:'Outdoor Human Biting Rate (HBR) or Human Landing Rate (HLR)', hbr:'HBR / HLR Keseluruhan',
+  rdIn:'Indoor Resting Density', rdOut:'Outdoor Resting Density', sr:'Sporozoit Rate (SR)', pr:'Parity Rate (PR)', oo:'Oocyst Rate',
+  vS:'Status Vulnerability', v:'Nilai Vulnerability', rS:'Status Receptivity', R:'Nilai Receptivity', iS:'Status Malaria Introduction', I:'Nilai Malaria Introduction',
+  wb:'Mortality Rate (WB)', bb:'Mortality Rate BB', cad:'Cadangan Penambahbaikan', tindakan:'Tindakan Pembetulan', potensi:'Potensi Jangkitan', punca:'Punca Jangkitan',
+  ulasanD:'Ulasan Pegawai Sains Kaji Serangga Daerah', ulasanN:'Ulasan Pegawai Sains Kaji Serangga Negeri'};
+const REQUIRED = ['ref','tarikh','daerah','lok','vecA','hbr','v','R','I','vS','rS','iS'];
+const CADMAP = {'pendidikan kesihatan (edaran risalah':'Pendidikan Kesihatan','pendidikan kesihatan (edaran risalah)':'Pendidikan Kesihatan','pendidikan kesihatan':'Pendidikan Kesihatan','itn':'ITN','llin':'LLIN','acd':'ACD','ors':'ORS','irs':'IRS','mbs':'MBS','lsm type 3':'LSM Type 3','ceramah':'Ceramah','repellent':'Repellent','perbincangan kumpulan kecil':'Perbincangan Kumpulan Kecil','insecticide treated cloth (itc)':'ITC','pameran':'Pameran','tidak perlu':'Tidak Perlu'};
+const pad = n => String(n).padStart(2,'0');
+function toDay(v){ // -> {iso, serial}
+  if (v == null || v === '') return null;
+  if (typeof v === 'number'){ const d = XLSX.SSF.parse_date_code(v); if(!d) return null; return {iso:`${d.y}-${pad(d.m)}-${pad(d.d)}`, n:Math.floor(v)}; }
+  if (v instanceof Date){ return toDay(Math.floor((Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()) - Date.UTC(1899,11,30))/864e5)); }
+  const s = String(v).trim(); let m;
+  if ((m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/))) return toDay(Math.round((Date.UTC(+m[3],+m[2]-1,+m[1]) - Date.UTC(1899,11,30))/864e5));
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return toDay(Math.round((Date.UTC(+m[1],+m[2]-1,+m[3]) - Date.UTC(1899,11,30))/864e5));
+  return null;
+}
+let nilSeen = false;
+function numv(v){ if (v == null || v === '') return null; if (typeof v === 'number') return Math.round(v*1000)/1000;
+  const s = String(v).replace(/m$/i,'').replace('°','').replace(',', '.').trim(); if (/^nil$/i.test(s)) { nilSeen = true; return null; }
+  const f = parseFloat(s); return isNaN(f) ? null : Math.round(f*1000)/1000; }
+const txtv = v => (v == null || String(v).trim() === '' ? null : String(v).trim());
+function coords(lonRaw, latRaw){
+  let fixed = false, lon = null, lat = null;
+  const one = v => { if (v == null || v === '') return null; if (typeof v === 'number') return [v]; const s = String(v).trim();
+    if (/[°,]/.test(s)) fixed = true; return s.replace(/°/g,'').split(/[,;\s]+/).filter(Boolean).map(Number).filter(x=>!isNaN(x)); };
+  const a = one(lonRaw) || [], b = one(latRaw) || [];
+  const all = a.length > 1 ? a : b.length > 1 ? b : null;
+  if (all) { lat = all.find(x=>Math.abs(x) < 30); lon = all.find(x=>Math.abs(x) >= 30); fixed = true; }
+  else { lon = a[0] ?? null; lat = b[0] ?? null; if (lon != null && lat != null && Math.abs(lon) < 30 && Math.abs(lat) >= 30){ [lon,lat] = [lat,lon]; fixed = true; } }
+  return {lon, lat, fixed};
+}
+function parseWorkbook(buf){
+  const wb = XLSX.read(buf, {type:'array', cellDates:false});
+  let rows = null, sheetName = null;
+  for (const name of wb.SheetNames){ const r = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
+    if (r.some(row => row && row.some(c => String(c ?? '').trim() === COL.ref))) { rows = r; sheetName = name; break; } }
+  if (!rows) throw new Error(tr('Lajur "No. Rujukan Kajian" tidak dijumpai. Pastikan ini fail eksport borang Laporan Penilaian Entomologi Anopheles.', 'Column "No. Rujukan Kajian" was not found. Make sure this is the Excel export of the Anopheles Entomological Assessment Report form.'));
+  const hi = rows.findIndex(row => row && row.some(c => String(c ?? '').trim() === COL.ref));
+  const head = rows[hi].map(c => String(c ?? '').replace(/\s+/g,' ').trim());
+  const idx = {}; for (const [k,name] of Object.entries(COL)){ const i = head.findIndex(h => k==='tindakan' ? h.startsWith(name) : h === name); if (i >= 0) idx[k] = i; }
+  const miss = REQUIRED.filter(k => idx[k] == null).map(k => COL[k]);
+  if (miss.length) throw new Error(tr('Lajur berikut tiada dalam fail: ', 'These columns are missing from the file: ') + miss.join(', ') + '.');
+  nilSeen = false; let gps = 0; const out = [], skipped = [];
+  for (const row of rows.slice(hi+1)){
+    if (!row || !txtv(row[idx.ref])) continue;
+    const g = k => idx[k] == null ? null : row[idx[k]];
+    const d = toDay(g('tarikh')), ts = toDay(g('ts'));
+    if (!d){ skipped.push(txtv(g('ref'))); continue; }
+    const c = coords(g('lon'), g('lat')); if (c.fixed) gps++;
+    const cad = [...new Set(String(g('cad') ?? '').split(',').map(x=>x.trim()).filter(x=>x && x.toLowerCase()!=='nan').map(x=>CADMAP[x.toLowerCase()] || x))];
+    const hasCase = /^ya$/i.test(String(g('tambah') ?? '').trim());
+    const nd = toDay(g('notif'));
+    out.push({ ref:txtv(g('ref')), date:d.iso, sub: ts ? ts.iso : d.iso, lag: ts ? ts.n - d.n : null,
+      kawasan:txtv(g('kawasan')), daerah:txtv(g('daerah')) || 'Tidak direkod', mukim:txtv(g('mukim')) || 'Tidak direkod', lok:txtv(g('lok')) || '(tiada nama lokaliti)',
+      klas:txtv(g('klas')) || 'Tidak direkod', obj:txtv(g('obj')), lat:c.lat ?? null, lon:c.lon ?? null, alt:numv(g('alt')),
+      stlok:txtv(g('stlok')), penempatan:txtv(g('penempatan')), premis:txtv(g('premis')), topo:txtv(g('topo')), veg:txtv(g('veg')), air:txtv(g('air')),
+      vecA:txtv(g('vecA')) || 'Tiada', vecL:txtv(g('vecL')) || 'Tiada', nonA:txtv(g('nonA')), nonL:txtv(g('nonL')),
+      bi:numv(g('bi')), bpr:numv(g('bpr')), hbrIn:numv(g('hbrIn')), hbrOut:numv(g('hbrOut')), hbr:numv(g('hbr')), rdIn:numv(g('rdIn')), rdOut:numv(g('rdOut')),
+      sr:numv(g('sr')), pr:numv(g('pr')), oo:numv(g('oo')),
+      vS:txtv(g('vS')) || 'Rendah', v:Math.round(numv(g('v')) ?? 0), rS:txtv(g('rS')) || 'Rendah', R:Math.round(numv(g('R')) ?? 0), iS:txtv(g('iS')) || 'Rendah', I:Math.round(numv(g('I')) ?? 0),
+      wb:numv(g('wb')), bb:numv(g('bb')), cad, potensi:txtv(g('potensi')), punca:txtv(g('punca')), tindakan:txtv(g('tindakan')),
+      ulasanD:txtv(g('ulasanD')), ulasanN:txtv(g('ulasanN')),
+      case: hasCase ? {notif: nd ? nd.iso : null, umur:txtv(g('umur')), jantina:txtv(g('jantina')), alamat:txtv(g('alamat')), klas:txtv(g('klasKes')), parasit:txtv(g('parasit'))} : null });
+  }
+  if (!out.length) throw new Error(tr('Tiada rekod kajian yang sah dijumpai dalam fail ini.', 'No valid study records were found in this file.'));
+  out.forEach(r => { if (r.lag == null || r.lag < 0) r.lag = 0; if (!['Rendah','Sederhana','Tinggi'].includes(r.iS)) r.iS = 'Rendah'; });
+  out.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  return {recs:out, gps, nil:nilSeen, skipped, sheetName};
+}
+function loadData(recs, src, dqx, demo=false){
+  DATA = recs; SRC = src; DQX = dqx; IS_DEMO = demo; openRef = null;
+  $('#landing').hidden = true; $('#dash').hidden = false; window.scrollTo(0,0);
+  F.forEach(id => $(id).value=''); fillFilters(); updateMeta(); dq();
+  if (!LM && mapMode==='leaflet') initLeaflet();
+  render();
+}
+function showLanding(){ $('#dash').hidden = true; $('#landing').hidden = false; setStatus(''); window.scrollTo(0,0); }
+$('#changeBtn').onclick = showLanding;
+$('#demoBtn').onclick = () => loadData(makeDemo(), 'Data demo (rekaan)', {gps:0, nil:false}, true);
+let lastMobile = isMobile(), rT = null;
+addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if ($('#dash').hidden) return; lastMobile = isMobile(); render(); }, 200); });
+
+// ---------- Demo data: fictional records for trying the dashboard (seeded, same every time)
+function makeDemo(){
+  let s = 20261020; const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = a => a[Math.floor(rnd()*a.length)], r2 = x => Math.round(x*100)/100;
+  const D = [
+    {d:'Ranau', code:'RNU', c:[5.95,116.75], sp:.16, m:['Paginatan','Nalapak','Bongkud','Lohan','Kaingaran','Timbua'], w:.6},
+    {d:'Tuaran', code:'TRN', c:[6.15,116.27], sp:.07, m:['Mangkaladoi','Topokon','Tamparuli','Tenghilan'], w:.28},
+    {d:'Kota Belud', code:'KB', c:[6.42,116.48], sp:.07, m:['Dudar','Taginambur'], w:.12}];
+  const CAD = ['ACD','Repellent','LSM Type 3','Perbincangan Kumpulan Kecil','Ceramah','ITC','LLIN','ORS','IRS','Pendidikan Kesihatan'];
+  const out = [], seq = {};
+  for (let i = 0; i < 40; i++){
+    const x = rnd(), dd = x < D[0].w ? D[0] : x < D[0].w + D[1].w ? D[1] : D[2];
+    const day = new Date(Date.UTC(2024,0,10) + Math.floor(rnd()*900)*864e5), iso = day.toISOString().slice(0,10), yr = iso.slice(0,4);
+    const k = rnd(), klas = k < .8 ? 'ERA Lokaliti Receptivity' : k < .95 ? 'EI Kluster ZM' : 'EI Wabak HM', ei = klas.startsWith('EI');
+    const key = `${dd.code}/${ei?'EI':'ERA'}/${yr}`; seq[key] = (seq[key]||0) + 1;
+    const vec = rnd() < .45, vecA = vec ? (dd.d==='Tuaran' && rnd()<.15 ? 'An. sundaicus' : 'An. balabacensis') : 'Tiada';
+    const hbr = vec ? r2(.01 + rnd()*rnd()*.3) : 0, hbrIn = vec && rnd() < .15 ? r2(hbr*.3) : 0;
+    const v = Math.round(2 + rnd()*30), vS = v <= 20 ? 'Rendah' : v <= 25 ? 'Sederhana' : 'Tinggi';
+    const R = vec ? pick([5,5,5,5,7,9,10,12]) : 2, rS = R >= 8 ? 'Sederhana' : 'Rendah';
+    const I = (vS!=='Rendah' && rS!=='Rendah') ? 4 : (vS!=='Rendah' || R>=9) ? 2 + Math.round(rnd()) : 1 + Math.round(rnd()*.7), iS = I >= 3 ? 'Sederhana' : 'Rendah';
+    const lag = Math.round(5 + rnd()*85), sub = new Date(day.getTime() + lag*864e5).toISOString().slice(0,10);
+    const cad = [...new Set(Array.from({length:1+Math.floor(rnd()*4)}, () => pick(CAD)))];
+    const lok = `Kg. Contoh ${String(i+1).padStart(2,'0')}`;
+    const wb = klas==='EI Wabak HM' ? 55 : null;
+    out.push({ ref:`DEMO-${dd.code}/MAL_${ei?'EI':'ERA'}/${yr}_${String(seq[key]).padStart(2,'0')}`, date:iso, sub, lag, kawasan:'Tuaran', daerah:dd.d, mukim:pick(dd.m), lok, klas,
+      obj: ei ? 'Potensi jangkitan' : 'Status vektor', lat: Math.round((dd.c[0] + (rnd()-.5)*2*dd.sp)*1e5)/1e5, lon: Math.round((dd.c[1] + (rnd()-.5)*2*dd.sp)*1e5)/1e5, alt: Math.round(20 + rnd()*900),
+      stlok: pick(['Pernah Kes Zoonotik Malaria','NIL']), penempatan: pick(['Luar Bandar, Kampung Tradisi','Luar Bandar, Kawasan Ladang']), premis:'Rumah Sebuah, Sulap / Pondok', topo: pick(['Bukit Bukau','Tanah Landai, Bukit Bukau']),
+      veg:'Hutan Sekunder, Bushes / Semak, Kebun/Ladang Getah', air:'Sungai, Anak Sungai, Lopak Air',
+      vecA, vecL:'Tiada', nonA:'Ae. albopictus, Cx. quinquefasciatus, Ar. subalbatus', nonL:'Culex spp',
+      bi:0, bpr:0, hbrIn, hbrOut: r2(hbr - hbrIn), hbr, rdIn:null, rdOut:null, sr:0, pr: vec && rnd() < .2 ? Math.round(88 + rnd()*12) : 0, oo:0,
+      vS, v, rS, R, iS, I, wb, bb: wb ? 100 : null, cad, potensi: vec ? 'Ada' : 'Tiada', punca: vec ? 'Tempat Tinggal' : 'Tiada', tindakan: rnd() < .2 ? 'Tindakan telah dilaksanakan (demo).' : null,
+      ulasanD:`DATA DEMO. Kajian ${klas} di ${lok}. Reseptiviti ${rS.toUpperCase()} (R=${R}), Vulnerability ${vS.toUpperCase()} (V=${v}). ${vec ? `${vecA} ditangkap dengan HBR ${hbr}.` : 'Tiada vektor ditemui.'} Risiko Malaria Introduction ${iS.toUpperCase()} (TRMR = ${I}).`,
+      ulasanN:null, case: ei ? {notif: new Date(day.getTime() - 20*864e5).toISOString().slice(0,10), umur:`${Math.round(3+rnd()*60)} Tahun`, jantina: pick(['Lelaki','Perempuan']), alamat:`${lok} (alamat demo)`, klas: klas==='EI Wabak HM' ? 'Indigenous' : 'Zoonotik Malaria', parasit: klas==='EI Wabak HM' ? 'Plasmodium malariae' : 'Plasmodium knowlesi'} : null });
+  }
+  return out.sort((a,b) => a.date < b.date ? -1 : 1);
+}
+function setStatus(msg, err){ const el = $('#upStatus'); el.textContent = msg; el.classList.toggle('err', !!err); }
+async function handleFile(file){
+  if (!file) return;
+  if (!window.XLSX){ setStatus(tr('Pembaca Excel tidak dapat dimuatkan. Semak sambungan internet dan cuba lagi.', 'The Excel reader could not load. Check your internet connection and try again.'), true); return; }
+  setStatus(tr(`Membaca ${file.name}…`, `Reading ${file.name}…`));
+  try {
+    const res = parseWorkbook(await file.arrayBuffer());
+    loadData(res.recs, file.name, {gps:res.gps, nil:res.nil});
+    setStatus('');
+  } catch (e) { setStatus(e.message || tr('Fail tidak dapat dibaca.', 'The file could not be read.'), true); }
+}
+$('#fileIn').addEventListener('change', e => { handleFile(e.target.files[0]); e.target.value = ''; });
+const drop = $('#drop');
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+// ---------- Language switch
+function applyStatic(){
+  document.documentElement.lang = LANG === 'en' ? 'en' : 'ms';
+  document.querySelectorAll('[data-en]').forEach(el => { if (el.dataset.bm == null) el.dataset.bm = el.innerHTML; el.innerHTML = LANG === 'en' ? el.dataset.en : el.dataset.bm; });
+  document.querySelectorAll('[data-en-ph]').forEach(el => { if (el.dataset.bmPh == null) el.dataset.bmPh = el.placeholder; el.placeholder = LANG === 'en' ? el.dataset.enPh : el.dataset.bmPh; });
+  document.querySelectorAll('[data-en-aria]').forEach(el => { if (el.dataset.bmAria == null) el.dataset.bmAria = el.getAttribute('aria-label'); el.setAttribute('aria-label', LANG === 'en' ? el.dataset.enAria : el.dataset.bmAria); });
+  document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === LANG));
+  document.title = tr('Penilaian MEAT', 'MEAT Assessment');
+  renderGloss();
+}
+function setLang(l){
+  LANG = l; try { localStorage.setItem('pkk-lang', l); } catch(e) {}
+  const keep = F.map(id => $(id).value);
+  applyStatic();
+  if (!$('#dash').hidden){
+    fillFilters(); F.forEach((id,i) => $(id).value = keep[i]); fillMukim(); $('#fMukim').value = keep[2];
+    if (noteKey) $('#mapnote').innerHTML = NOTES[noteKey]();
+    updateMeta(); dq(); render();
+  }
+  if ($('#upStatus').classList.contains('err')) setStatus('');
+}
+document.querySelectorAll('.lang button').forEach(b => b.onclick = () => setLang(b.dataset.lang));
+applyStatic();
+/* dashboard starts on the upload screen; nothing renders until data is loaded */
+</script>
+
+</body>
+</html>
